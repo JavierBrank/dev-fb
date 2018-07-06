@@ -70,7 +70,7 @@ app.get('/resetlog', function(req, res) {
 });
 
 app.post('/facebook', function(req, res) {
-  req.body ={
+  /*req.body ={
     "object": "page",
     "entry": [
       {
@@ -95,14 +95,15 @@ app.post('/facebook', function(req, res) {
       }
     ]
   };  
+  */
   console.log('Facebook request body:', req.body);
-  /*
+  
   if (!req.isXHubValid()) {
     console.log('Warning - request header X-Hub-Signature not present or invalid');
     res.sendStatus(401);
     return;
   }
-*/
+
 /*
 var client = new Client({
   connectionString: connectionString,
@@ -129,7 +130,7 @@ client.query(queryInsert,
       logs.unshift(valor);
     });
    
-    res.sendStatus(200, 'okey');
+    res.sendStatus(200);
 });
 
 
