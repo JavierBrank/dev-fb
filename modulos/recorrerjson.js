@@ -4,13 +4,14 @@ module.exports.indentificarJSON = function(json, funcion_retorno){
 
 				funcion_retorno({"Objeto": "page"});
 				if(json.entry[0].hasOwnProperty('messaging')){
+
 						funcion_retorno({"Mensaje":" entarnte o saliente"});
 				}else
 					{
 					funcion_retorno({"NO es":" un mensaje"});
 					}
 			}else{	
-				funcion_retorno({"Objeto":" desconocido"});
+				funcion_retorno({"Objeto":" desconocido"},false);
 			}
 			
 

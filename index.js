@@ -119,8 +119,9 @@ app.post('/facebook', function(req, res) {
   };  
   */
   console.log('Facebook request body:', req.rawHeaders);
-  reqbodys = req;
-      //console.log(req );
+      
+
+      reqbodys = console.log(req );
       logs.unshift(reqbodys);
 
   if (!req.isXHubValid()) {
@@ -129,7 +130,7 @@ app.post('/facebook', function(req, res) {
     logs.unshift(errorxhub);
     
     //res.sendStatus(401);
-    return;
+    //return;
   }else{
     logs.unshift("Encabezado de solicitud X-Hub-Signature validado");
   }
@@ -150,16 +151,22 @@ client.query(queryInsert,
   console.log('request header X-Hub-Signature validated');
   // Process the Facebook updates here
 
-    received_updates.unshift(req.body)
-    valor_de_jsonb = jsonb.indentificarJSON(req.body, function(devolucion){
+    received_updates.unshift(req.body);
+    valor_de_jsonb = jsonb.indentificarJSON(req.body, function(devolucion, estado){
         console.log(devolucion);
         logs.unshift(devolucion);
+        if (!estado){
+          logs.unshift("Se detiene el proceso de insercion en la BD");
+        }else{
+        query.insertarJSON(req.body, function(valor){
+      logs.unshift(valor);  
+        });
+        }
+    
+    
+
     });
-    console.log(valor_de_jsonb);
-    query.insertarJSON(req.body, function(valor){
-      logs.unshift(valor);
-    });
-   
+   console.log(valor_de_jsonb);
     res.sendStatus(200);
 });
 
