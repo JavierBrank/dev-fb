@@ -118,12 +118,16 @@ app.post('/facebook', function(req, res) {
     ]
   };  
   */
-  console.log('Facebook request body:', req.body.entry);
-  
+  console.log('Facebook request body:', req.rawHeaders);
+  reqbodys = req;
+      //console.log(req );
+      logs.unshift(reqbodys);
+
   if (!req.isXHubValid()) {
+    
     errorxhub = "WAdvertencia: el encabezado de solicitud X-Hub-Signature no está presente o no es válido";
     logs.unshift(errorxhub);
-    console.log(errorxhub );
+    
     //res.sendStatus(401);
     return;
   }else{
