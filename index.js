@@ -66,7 +66,7 @@ app.get('/', function(req, res) {
 });
 
 app.get('/facebook', function(req, res) {   
-
+  logs.unshift("NUEVO GET /Facebook");
   
   if (
     req.param('hub.mode') == 'subscribe' &&
@@ -91,7 +91,7 @@ app.get('/reset', function(req, res) {
 });
 
 app.post('/facebook', function(req, res) {
-   logs.unshift("NUEVO POST");
+   logs.unshift("NUEVO POST /facebook");
   /*req.body ={
     "object": "page",
     "entry": [
