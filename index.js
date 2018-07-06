@@ -92,7 +92,7 @@ app.get('/reset', function(req, res) {
 
 app.post('/facebook', function(req, res) {
    logs.unshift("NUEVO POST /facebook");
-  /*req.body ={
+  req.body ={
     "object": "page",
     "entry": [
       {
@@ -117,13 +117,13 @@ app.post('/facebook', function(req, res) {
       }
     ]
   };  
-  */
+  
   console.log('Facebook request body:', req.rawHeaders);
       
 
-      reqbodys = console.log(req );
-      logs.unshift(reqbodys);
-
+      //reqbodys = console.log(req );
+      //logs.unshift(reqbodys);
+/*
   if (!req.isXHubValid()) {
     
     errorxhub = "WAdvertencia: el encabezado de solicitud X-Hub-Signature no está presente o no es válido";
@@ -134,7 +134,7 @@ app.post('/facebook', function(req, res) {
   }else{
     logs.unshift("Encabezado de solicitud X-Hub-Signature validado");
   }
-
+*/
 /*
 var client = new Client({
   connectionString: connectionString,
@@ -152,15 +152,36 @@ client.query(queryInsert,
   // Process the Facebook updates here
 
     received_updates.unshift(req.body);
-    valor_de_jsonb = jsonb.indentificarJSON(req.body, function(devolucion, estado){
-        console.log(devolucion);
-        logs.unshift(devolucion);
-        if (!estado){
-          logs.unshift("Se detiene el proceso de insercion en la BD");
-        }else{
-        query.insertarJSON(req.body, function(valor){
-      logs.unshift(valor);  
-        });
+    valor_de_jsonb = jsonb.indentificarJSON(req.body, function(devolucion, accion, sql){
+      console.log(devolucion);
+      received_updates.unshift(devolucion);
+      switch(accion){
+        case "abortar" : 
+              received_updates.unshift("Se detiene el proceso de insercion en la BD");
+        break;
+        case "insertar" : 
+              query.insertarJSON(sql, 
+                function(valor){
+                    received_updates.unshift(valor); 
+                  });
+        break;
+        case "consultar_usuario" : 
+              query.consultar_usuario(sql, 
+                function(valor, existencia ){
+                    received_updates.unshift(valor);
+                    switch(existencia){
+                      case 'existe':
+                          received_updates.unshift({"Usuario" : "Existe"});
+                      break;
+                      case 'no-existe':
+                          received_updates.unshift({"Usuario" : "No existe"});
+                      break;
+                      default:
+                    }
+                  
+                  });
+        break;
+        default:
         }
     
     
