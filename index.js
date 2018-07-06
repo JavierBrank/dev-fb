@@ -15,21 +15,22 @@
 //INDEX OPENSHIFT
 var bodyParser = require('body-parser');
 var express = require('express');
-var fs = require('fs');
-var https = require('https');
+//var fs = require('fs');
+//var https = require('https');
 var app = express();
 var xhub = require('express-x-hub');
 var query = require('./modulos/db');
 var token =  process.env.TOKEN || '34paler65';
 var app_secret =  process.env.APP_SECRET || 'a3e128419aa957f847fc37ee3faca4f1';
 var jsonb = require('./modulos/recorrerjson');
-var clave = fs.readFileSync('./.well-known/acme-challenge/zZGrLXIUwz4Jze2kGpAsUDW8FIlvn1A5xIiVy2DrSss','utf8')
+var logs = [];
+//var clave = fs.readFileSync('./.well-known/acme-challenge/zZGrLXIUwz4Jze2kGpAsUDW8FIlvn1A5xIiVy2DrSss','utf8')
 app.set('port', (process.env.PORT || 5000));
 const port = app.get('port');
-const { Pool, Client } = require('pg');
 //const connectionString =  'postgres://admin:admin@10.30.0.231:5432/db_inscripcion';
 const connectionString = 'postgres://waghcyct:VrnvqmW15dYT_403BOoGt8ckvUkWdljU@tantor.db.elephantsql.com:5432/waghcyct';
 //
+/*
 var options = {
   ca: fs.readFileSync('./.well-known/acme-challenge/ca.csr'),
   key: fs.readFileSync('./.well-known/acme-challenge/key.key'),
@@ -38,16 +39,19 @@ var options = {
 https.createServer(options,app).listen(port, ()=>{
   console.log("Servidor https corriendo en puerto: ", port);
 });
-/*
-app.listen(app.get('port'), () => {
-  console.log("Aplicacion DEV-FACEBOOK corriendo en puerto", app.get('port'))
-});
 */
+
+app.listen(app.get('port'), () => {
+  appinit = "Aplicacion DEV-FACEBOOK corriendo en puerto", app.get('port');
+  logs.unshift(appinit);
+  console.log(appinit)
+});
+
 app.use(xhub({ algorithm: 'sha1', secret: app_secret}));
 app.use(bodyParser.json());
 
 var received_updates = [];
-var logs = [];
+
 
 app.get('/', function(req, res) {
 // console.log(req);
@@ -68,22 +72,26 @@ app.get('/facebook', function(req, res) {
     req.param('hub.mode') == 'subscribe' &&
     req.param('hub.verify_token') == token
   ) {
+    logs.unshift("TOKEN VERIFICADO");
     res.send(req.param('hub.challenge'));
   } else {
+    logs.unshift("TOKEN INCORRECTO");
     res.sendStatus(400)
   }
 
 });
-app.get('/resetlog', function(req, res) {   
+app.get('/reset', function(req, res) {   
 
   
   logs = [];
-  res.write("Variable LOG reseteada");
+  Received_updates = [];
+  res.write("log Y json reseteados");
   res.end();
 
 });
 
 app.post('/facebook', function(req, res) {
+   logs.unshift("NUEVO POST");
   /*req.body ={
     "object": "page",
     "entry": [
@@ -113,9 +121,13 @@ app.post('/facebook', function(req, res) {
   console.log('Facebook request body:', req.body.entry);
   
   if (!req.isXHubValid()) {
-    console.log('Warning - request header X-Hub-Signature not present or invalid');
+    errorxhub = "WAdvertencia: el encabezado de solicitud X-Hub-Signature no está presente o no es válido";
+    logs.unshift(errorxhub);
+    console.log(errorxhub);
     res.sendStatus(401);
     return;
+  }else{
+    logs.unshift("Encabezado de solicitud X-Hub-Signature validado");
   }
 
 /*
