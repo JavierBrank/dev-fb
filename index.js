@@ -42,7 +42,7 @@ https.createServer(options,app).listen(port, ()=>{
 */
 
 app.listen(app.get('port'), () => {
-  appinit = "Aplicacion DEV-FACEBOOK corriendo en puerto", app.get('port');
+  appinit = "Aplicacion DEV-FACEBOOK corriendo en puerto: "+ app.get('port');
   logs.unshift(appinit);
   console.log(appinit)
 });
@@ -123,8 +123,8 @@ app.post('/facebook', function(req, res) {
   if (!req.isXHubValid()) {
     errorxhub = "WAdvertencia: el encabezado de solicitud X-Hub-Signature no está presente o no es válido";
     logs.unshift(errorxhub);
-    console.log(errorxhub);
-    res.sendStatus(401);
+    console.log(errorxhub );
+    //res.sendStatus(401);
     return;
   }else{
     logs.unshift("Encabezado de solicitud X-Hub-Signature validado");
