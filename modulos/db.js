@@ -12,38 +12,64 @@ const conString   =   process.env.ELEPHANTSQL_URL || "postgres://admin:admin@10.
 
 
 
-module.exports.insertarJSON = function(valor, retorno){
+module.exports.insertarJSON = function(valor, retorno, conexion){
+
+
+  return new Promise((res, rej)=>{
       const reqbody     =   valor;  
       funcion_retorno=retorno;
-  
+      
    
 
-  ejecutarQuery(reqbody, funcion_retorno);
-  function ejecutarQuery(dato, cargarlog){
+  ejecutarQuery(reqbody, funcion_retorno, conexion)
+  .then((ok)=>{
+    console.log("then resolve 1.0 ");
+    res("InsertarJson Finalizo coreecatmente")
+  })
+  .catch((mal)=>{
+    console.log("reject 1.0");
+    rej("Insertar JSON no finalizo correctamente: "+mal.stack)
+
+  });
+  function ejecutarQuery(dato, cargarlog, conexion){
         
+         return new Promise((resolve, reject)=>{
+              cargarlog({"Dentro de funcion ejecutarQuery()" : "OK"});
+                console.log("----------------PASO 3.1---- POR INSERTAR")  
+               crearQuery(dato)
+               
+               var sql_insertar_mensaje = {
+                      text: 'INSERT INTO '+tbface_mensaje+
+                      ' (id_interaccion, id_usuario,id_mensaje, fecha, fecha_time,saliente,mensaje,fecha_leido, fecha_alta'+
+                      ',fecha_actualizacion,oprid,estado) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)',
+                      values: ['brianc', 'brian.m.carlson@gmail.com'],
+                              } 
+              .then((respuesta) => {
+                cargarlog({" Query para insertar " : respuesta});
+                      ok = "query ok ok -- -- - ";
+                      console.log(ok);
+                    conexion.query(respuesta)
+                    .then(resultado => {
+                      cargarlog({"Client.query" : resultado.rows[0]});
+                      resolve("okokoo")
+                    })
+                    .catch( error => {
+                      cargarlog({"Client.query" : error});
+                      reject(error)
+
+                    });
+
+              })
+              .catch((e) => {
+                reject("Hubo un error"+e)
+              })
+
+
          
-          cargarlog({"Dentro de funcion ejecutarQuery()" : "OK"});
-          var client = new pg.Client({
-             connectionString: conString,
-          });
 
-          client.connect(function(err){
-
-
-            if(err) {
-            
-            cargarlog({"Client.connect() No es posible conectar con postgres " : err});
-            console.log("Client.connect() No es posible conectar con postgres ");
-            return err;
-
-            }else {
-
-              cargarlog({"Client.connect() Conectado con postgres " : "OK"});
-              console.log("Client.connect() Conectado con postgres ");
-              }
-
-
-              var queryInsert = crearQuery(dato, function(queryparainsertar){
+         })
+        /*
+function(queryparainsertar){
 
                 console.log("dentro de la funcion de crear query");
                 if (!queryparainsertar){
@@ -61,89 +87,116 @@ module.exports.insertarJSON = function(valor, retorno){
                       console.log(ok);
                     }
                       
+                    
                     client.query(queryparainsertar)
                     .then(resultado => {cargarlog({"Client.query" : resultado});})
                     .catch( error => {cargarlog({"Client.query" : error});});
 
                 });
         
-            });
+        */
 
 
 };
 
 
-function crearQuery(jsondata, devolucion){
-    //var obj = JSON.parse(received_updates);
+function crearQuery(jsondata){
+
+  return new Promise((resolve, reject)=>{
+    console.log("----------------PASO 3.2---- CREANDO LA QUERY")  
+        //var obj = JSON.parse(received_updates);
     console.log("jason data", jsondata);
     console.log("TYPEOF jason data", typeof(jsondata));
     if (jsondata){
 
 
-      var detalle = "jueves 17:47";
+      var detalle = "15_05";
       var insert = "INSERT INTO tbface_log(fecha, json_data, estado, detalle) VALUES (now(), '"+jsondata+"', null, '"+detalle+"' );";
       //var insert = "INSERT INTO tbface_log(fecha, id_page, json_data, saliente, estado, detalle) VALUES (now(), '"+id_page+"', '"+json+"',"+saliente+", "+estado+",'"+detalle+"' );";
        console.log("insert", insert);
        
-       devolucion(insert);
+       resolve(insert);
        
     }else{
       console.log("false",  insert);
-      devolucion(false);
+      reject("MEnsjaje de error no deifnido");
     
       
     }
-    return false;
+    
+  })
+  
 }
+
+  });
+    
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // recibo como parametros: 
 //                      psid = el psid de usuario que viene de la funcion recorrer JSON
 //                      funcion_existencia 
-module.exports.consultar_usuario = function(psid, funcion_existencia){
+module.exports.consultar_usuario = function(psid, funcion_existencia, conexion){
 
+return new Promise((res , rej) => {
 
-
-
-            if(psid){
+  if(psid){
                  funcion_existencia({"Dentro de funcion consultar_usuario()" : "OK"});
-                      var client = new pg.Client({
-                      connectionString: conString,
-                    });
-
-                 client.connect(function(err){
-
-
-            if(err) {
+                  
             
-            funcion_existencia({"Client.connect() No es posible conectar con postgres " : err});
-            console.log("Client.connect() No es posible conectar con postgres ");
-            return err;
-
-            }else {
-
-              funcion_existencia({"Client.connect() Conectado con postgres " : "OK"});
-              console.log("Client.connect() Conectado con postgres ");
-              }
+                
 
               sql_consultar_usuario = "SELECT * FROM "+tbface_usuario+" where psid_webhook_usuario = '"+psid+"';"; 
               
             
                       funcion_existencia({" Query para insertar" : sql_consultar_usuario});
-                      ok = "query ok ok ";
-                      console.log(ok);
-                    
-                        client.query(sql_consultar_usuario)
-                              .then(res => {
-                                if(res.rows[0]){
-                                  funcion_existencia({"Resultado: " : res}, 'existe');
+
+                        conexion.query(sql_consultar_usuario)
+                              .then(result => {
+                                console.log("------------PASO 2.1---")
+                                if(result.rows[0]){
+                                  funcion_existencia({"Resultado: " : result.rows[0]}, 'existe');
+                                  console.log("------------PASO 2.2--EXISTE USUARIO");
+                                  res()
+                                  
                                 } 
                                 
-
-
-                                console.log(res.rows[0]);
                               })
-                              .catch(e => {funcion_existencia({"Error: " : e.stack});console.error(e.stack)})
-                    var consulta = client.query(sql_consultar_usuario, function(err, result){
+                              .catch(e => {
+                                funcion_existencia({"Error: " : e.stack});
+                                console.log("------------PASO 2.2--NO EXISTE USUARIO");
+                                console.error(e.stack);
+                               
+                                rej();
+                              })
+
+
+/*
+                    var consulta = conexion.query(sql_consultar_usuario, function(err, result){
 
                        if(err) {
 
@@ -161,7 +214,7 @@ module.exports.consultar_usuario = function(psid, funcion_existencia){
                         //  res.send('<pre> corriendo la sql_consultar_usuario: ' + JSON.stringify(result) + '</pre>')
                         //console.log(result.rows[0].theTime);
                         //output: Tue Jan 15 2013 19:12:47 GMT-600 (CST)
-                        client.end((err)=>{
+                        conexion.end((err)=>{
                             if(err){
                               funcion_existencia({"Error desconectando de Postgresql " : err});
                             }else{
@@ -170,15 +223,30 @@ module.exports.consultar_usuario = function(psid, funcion_existencia){
                         });
                         return ok;
                       });
+                    */
+                  
+                }else{
+                  rej()
+                }
 
-                });
-
-            }
+            });
            
+
+}
+
+
+            
         
            
 
 
+
+
+
+module.exports.actualizar_pages = function(conexionBD, callback){
+    callback({"Dentro de funcion consultar_usuario()" : "OK"});
+                
+
+                 
+
 };
-
-
