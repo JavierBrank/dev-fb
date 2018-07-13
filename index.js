@@ -150,7 +150,7 @@ app.post('/facebook', function(req, res) {
           }
         ]
       }
-    ]
+    ] 
   };  
   
 /*
