@@ -150,9 +150,9 @@ app.post('/facebook', function(req, res) {
           }
         ]
       }
-    ] 
+    ]   
   };  
-  
+   
 /*
   if (!req.isXHubValid()) {
     
