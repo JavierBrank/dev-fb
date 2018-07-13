@@ -24,7 +24,7 @@ const tbface_mensaje            = "tbface_mensaje";
 const tbface_permiso_face_page  = "tbface_permiso_face_page";
 const tbface_attachments        = "tbface_attachments";
 const sqlString   =   require('sqlstring');
-//const conString   =   process.env.ELEPHANTSQL_URL || "postgres://admin:admin@10.30.0.231:5432/db_inscripcion" ;  
+const conString   =   process.env.ELEPHANTSQL_URL || "postgres://admin:admin@10.30.0.231:5432/db_inscripcion" ;  
 var app = express();
 var xhub = require('express-x-hub');
 var db = require('./modulos/db');
@@ -35,10 +35,10 @@ const pg = require('pg');
 var logs = [];
 var pages = [];
 //var clave = fs.readFileSync('./.well-known/acme-challenge/zZGrLXIUwz4Jze2kGpAsUDW8FIlvn1A5xIiVy2DrSss','utf8')
-app.set('port', (process.env.PORT || 8080));
+app.set('port', (process.env.PORT || 5000));
 const port = app.get('port');
 //const connectionString =  'postgres://admi.n:admin@10.30.0.231:5432/db_inscripcion';
-const conString = 'postgres://waghcyct:VrnvqmW15dYT_403BOoGt8ckvUkWdljU@tantor.db.elephantsql.com:5432/waghcyct';
+//const conString = 'postgres://waghcyct:VrnvqmW15dYT_403BOoGt8ckvUkWdljU@tantor.db.elephantsql.com:5432/waghcyct';
 //
 app.listen(app.get('port'), () => {
   appinit = "Aplicacion DEV-FACEBOOK corriendo en puerto: "+ app.get('port');

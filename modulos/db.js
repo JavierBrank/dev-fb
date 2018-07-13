@@ -28,7 +28,7 @@ module.exports.insertarJSON = function(valor, retorno, conexion){
   })
   .catch((mal)=>{
     console.log("reject 1.0");
-    rej("Insertar JSON no finalizo correctamente: "+mal.stack)
+    rej("Insertar JSON no finalizo correctamente: "+mal)
 
   });
   function ejecutarQuery(dato, cargarlog, conexion){
@@ -36,15 +36,18 @@ module.exports.insertarJSON = function(valor, retorno, conexion){
          return new Promise((resolve, reject)=>{
               cargarlog({"Dentro de funcion ejecutarQuery()" : "OK"});
                 console.log("----------------PASO 3.1---- POR INSERTAR")  
-               crearQuery(dato)
-               
+               //crearQuery(dato)
+               var id_interaccion = Math.floor(Math.random() * (10000 - 1)) + 1;
                var sql_insertar_mensaje = {
                       text: 'INSERT INTO '+tbface_mensaje+
                       ' (id_interaccion, id_usuario,id_mensaje, fecha, fecha_time,saliente,mensaje,fecha_leido, fecha_alta'+
-                      ',fecha_actualizacion,oprid,estado) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)',
-                      values: ['brianc', 'brian.m.carlson@gmail.com'],
+                      ',fecha_actualizacion,oprid,estado) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)',
+                      values: [id_interaccion, dato.psid_webhook_usuario,dato.mid,
+                      dato.time,dato.timestamp,dato.saliente,dato.text,'null','','','',''],
                               } 
-              .then((respuesta) => {
+                                console.log(sql_insertar_mensaje)
+              conexion.query(sql_insertar_mensaje)
+                    .then((respuesta) => {
                 cargarlog({" Query para insertar " : respuesta});
                       ok = "query ok ok -- -- - ";
                       console.log(ok);

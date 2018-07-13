@@ -34,7 +34,7 @@ module.exports.indentificarJSON = function(json, funcion_retorno){
 						//Si el objeto tiene la propiedad mmessaging
 					if(entry.hasOwnProperty('messaging'))
 					{
-						
+						json_final.timestamp=json.entry[0].timestamp;
 						//recorro el array messaging[index] como messaging 
 						entry.messaging.forEach(function(messaging, i , array_messaging){
 							//Si existe el atributo delivery quiere decir que es un informe de entrega
