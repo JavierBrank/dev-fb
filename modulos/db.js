@@ -68,33 +68,8 @@ module.exports.insertarJSON = function(valor, retorno, conexion){
          
 
          })
-        /*
-function(queryparainsertar){
 
-                console.log("dentro de la funcion de crear query");
-                if (!queryparainsertar){
-
-            
-                    client.end();
-                    ok = "la variable esta vacia";
-                    cargarlog({"Variable " : "Vacia"});
-                    console.log(ok);
-                    return ok;
-                  }else
-                    {
-                      cargarlog({" Query para insertar" : queryparainsertar});
-                      ok = "query ok ok ";
-                      console.log(ok);
-                    }
-                      
-                    
-                    client.query(queryparainsertar)
-                    .then(resultado => {cargarlog({"Client.query" : resultado});})
-                    .catch( error => {cargarlog({"Client.query" : error});});
-
-                });
-        
-        */
+       
 
 
 };
@@ -131,32 +106,6 @@ function crearQuery(jsondata){
   });
     
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // recibo como parametros: 
 //                      psid = el psid de usuario que viene de la funcion recorrer JSON
 //                      funcion_existencia 
@@ -178,53 +127,24 @@ return new Promise((res , rej) => {
                         conexion.query(sql_consultar_usuario)
                               .then(result => {
                                 console.log("------------PASO 2.1---")
+                                console.log(sql_consultar_usuario)
                                 if(result.rows[0]){
                                   funcion_existencia({"Resultado: " : result.rows[0]}, 'existe');
                                   console.log("------------PASO 2.2--EXISTE USUARIO");
                                   res()
                                   
-                                } 
+                                }else{
+                                  console.log("------------PASO 2.2--NO EXISTE USUARIO");
+                                  rej();
+                                }
                                 
                               })
                               .catch(e => {
                                 funcion_existencia({"Error: " : e.stack});
-                                console.log("------------PASO 2.2--NO EXISTE USUARIO");
-                                console.error(e.stack);
-                               
-                                rej();
+                                console.log(e.stack);
+                                rej(e);
                               })
 
-
-/*
-                    var consulta = conexion.query(sql_consultar_usuario, function(err, result){
-
-                       if(err) {
-
-                        ok = "Error corriendo la sql_consultar_usuario";
-                        funcion_existencia({"Error con Query para insertar" : err});
-                        console.log(ok, err);
-                        return ok;
-                         // res.send('<pre>Error corriendo la sql_consultar_usuario: '+ err +'</pre>');
-                        return console.error('Error corriendo la sql_consultar_usuario:', err);
-                        }else {
-                          funcion_existencia({"qUERY CONSULTA " : "OK"});
-                          ok = result;
-                          console.log(ok);
-                        }               
-                        //  res.send('<pre> corriendo la sql_consultar_usuario: ' + JSON.stringify(result) + '</pre>')
-                        //console.log(result.rows[0].theTime);
-                        //output: Tue Jan 15 2013 19:12:47 GMT-600 (CST)
-                        conexion.end((err)=>{
-                            if(err){
-                              funcion_existencia({"Error desconectando de Postgresql " : err});
-                            }else{
-                              funcion_existencia({"Desconectado de la BD" : "OK"});
-                            }
-                        });
-                        return ok;
-                      });
-                    */
-                  
                 }else{
                   rej()
                 }
@@ -233,20 +153,3 @@ return new Promise((res , rej) => {
            
 
 }
-
-
-            
-        
-           
-
-
-
-
-
-module.exports.actualizar_pages = function(conexionBD, callback){
-    callback({"Dentro de funcion consultar_usuario()" : "OK"});
-                
-
-                 
-
-};
