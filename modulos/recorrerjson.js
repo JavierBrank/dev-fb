@@ -34,11 +34,13 @@ module.exports.indentificarJSON = function(json, funcion_retorno){
 						//Si el objeto tiene la propiedad mmessaging
 					if(entry.hasOwnProperty('messaging'))
 					{
-						json_final.timestamp=json.entry[0].timestamp;
+						
 						//recorro el array messaging[index] como messaging 
 						entry.messaging.forEach(function(messaging, i , array_messaging){
 							//Si existe el atributo delivery quiere decir que es un informe de entrega
-						
+							
+			                json_final.timestamp = messaging.timestamp;
+							//json_final.timestamp=messaging.timestamp;
 
 							if(messaging.hasOwnProperty('delivery'))
 						{
@@ -69,6 +71,7 @@ module.exports.indentificarJSON = function(json, funcion_retorno){
 								funcion_retorno({"mensaje": "saliente"}, 'consultar_usuario', psid_webhook_usuario)
 								.then(usuario_ok => {
 									console.log("----------PASO 3 --------INSERTAR JSON")
+									json_final.id_usuario=usuario_ok.id_usuario;
 									console.log("Json_final: ",json_final)
 									funcion_retorno({"mensaje": "saliente"}, 'insertar', json_final)
 									.then(insertado => {
@@ -102,6 +105,7 @@ module.exports.indentificarJSON = function(json, funcion_retorno){
 								funcion_retorno({"mensaje": "entrante"}, 'consultar_usuario', psid_webhook_usuario)
 								.then(usuario_ok => {
 									console.log("----------PASO 3 --------INSERTAR JSON")
+									json_final.id_usuario=usuario_ok.id_usuario;
 									console.log("Json_final: ",json_final)
 									funcion_retorno({"mensaje": "saliente"}, 'insertar', json_final)
 									.then(insertado => {

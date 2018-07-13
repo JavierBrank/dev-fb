@@ -234,13 +234,13 @@ promesa
                       .then(user_exist => {
                         
                         
-                        res("user Existe")
+                        res(user_exist)
 
                       })
                       .catch(user_noexis => {
                         console.log("Catch: User noe xist")
                         
-                        rej("user noe xist")
+                        rej(user_noexis)
 
                       });
                 break;
@@ -255,7 +255,10 @@ promesa
                         console.log("json_final instertado en la base");
                         res("isnertado");
                       })
-                      .catch((bad)=> rej(bad));
+                      .catch((bad)=> {
+                        console.log("Reject db.insertarJSON")
+                        rej(bad)
+                      });
                       
                       
                 break;
@@ -274,7 +277,8 @@ promesa
                   resolve("ok");
                 })
       .catch(rejej => {
-        console.log("ejejejjejeje",rejej)
+        console.log("Reject recorrerjson.indentificarJSON()")
+        //console.log("ejejejjejeje",rejej)
         reject(rejej);
       });
   });
@@ -282,14 +286,32 @@ promesa
 
 })
 .then(terminar => {
-  console.log("--------------paso 8")
-  client.end()
+  console.log("--------------paso 8---THEN")
+  
+  client.end(function(errorbd){
+    if(errorbd){console.log("Desconcetado BD Error: ",err); return
+  }else{
+
+  console.log("BD desconectada exitosamente");
+  }
+  })
   res.sendStatus(200);
 
   
 })
-.catch((err)=>{console.log("...: ",err);
-  client.end()
+.catch((err)=>{
+
+  console.log("--------------paso 8--CATCH")
+
+  client.end(function(errorbd){
+     if(errorbd){console.log("Desconcetado BD Error: ",err); return
+  }else{
+    
+  console.log("BD desconectada exitosamente");
+}
+  })
+  console.log("El error es el siguiente: ")
+  console.log(err)
   res.sendStatus(200);
 
 });
