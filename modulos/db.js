@@ -30,7 +30,7 @@ module.exports.insertarJSON = function(valor, retorno, conexion){
     console.log("reject 1.0");
     rej("Insertar JSON no finalizo correctamente: "+mal)
 
-  });
+  }); 
   function ejecutarQuery(dato, cargarlog, conexion){
         
          return new Promise((resolve, reject)=>{

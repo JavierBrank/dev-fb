@@ -46,7 +46,7 @@ module.exports.indentificarJSON = function(json, funcion_retorno){
 							
 
 								//Es un informe de entrega
-						}
+						} 
 						//Si existe el atributo message - pueden ser varias cosas
 						if (messaging.hasOwnProperty('message') )
 

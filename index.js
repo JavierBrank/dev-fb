@@ -122,7 +122,7 @@ app.get('/reset', function(req, res) {
   res.write("log Y json reseteados");
   res.end();
 
-});
+}); 
 
 app.post('/facebook', function(req, res) {
 
