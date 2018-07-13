@@ -6,7 +6,8 @@ npm-debug.log
 *.env
 *.dev
 .DS_Store
-
+gitlab_rsa
+gitlab_rsa.pub
 # Docker
 Dockerfile
 docker-compose.yml

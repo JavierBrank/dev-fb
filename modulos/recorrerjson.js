@@ -92,6 +92,7 @@ module.exports.indentificarJSON = function(json, funcion_retorno){
 								//funcion_retorno({"mensaje": "entrante"}, 'ignorar');
 								//es un mensaje saliente 
 								//Si es saliente entoncess el que recibe es el usuario
+								json_final.psid_webhook_usuario = messaging.sender.id;
 								psid_webhook_usuario = messaging.sender.id;
 								json_final.saliente = 'false';
 				

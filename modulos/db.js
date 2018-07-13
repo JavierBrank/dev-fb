@@ -37,7 +37,12 @@ module.exports.insertarJSON = function(valor, retorno, conexion){
               cargarlog({"Dentro de funcion ejecutarQuery()" : "OK"});
                 console.log("----------------PASO 3.1---- POR INSERTAR")  
                //crearQuery(dato)
+                 console.log("dataso : ",dato)
                var id_interaccion = Math.floor(Math.random() * (10000 - 1)) + 1;
+               var d = new Date(dato.timestamp);
+                var timeStamp = d.getTime();
+                dato.timestamp = timestamp;
+
                var sql_insertar_mensaje = {
                       text: 'INSERT INTO '+tbface_mensaje+
                       ' (id_interaccion, id_usuario,id_mensaje, fecha, fecha_time,saliente,mensaje,fecha_leido, fecha_alta'+
