@@ -1,4 +1,4 @@
-/**
+  /**
  * Copyright 2016-present, Facebook, Inc.
  * All rights reserved.
  //de.facebok
@@ -89,20 +89,26 @@ app.post('/facebook', function(req, res) {
         "messaging": [
           {
             "sender": {
-              "id": "1881196298614059"
+              "id": "18511426565412365"
             },
             "recipient": {
               "id": "159709944504329"
             },
             "timestamp": 1531763032332,
             "message": {
-              "mid": "U-mQI7i2ryEA8Qp6VtjU8CtbPz3Mkp-ies9cRyMZJpEl0ia7xUL4X9lDYJOQ0EZ_5krh0i1O5l7ipcM6cQ7Spg",
+              "mid": "I7i2ryEA8Qp6VtjU8CtbPz3Mkp-ies9cRyMZJpEl0ia7xUL4X9lDYJOQ0EZ_5krh0i1O5l7ipcM6cQ7Spg",
               "seq": 73125,
               "attachments": [
                 {
                   "type": "file",
                   "payload": {
-                    "url": "https://cdn.fbsbx.com/v/t59.2708-21/36967490_10216420852177677_8249615161720045568_n.jpg/1afy8guwujfCNWfrvYJeYlHEO5f7UcbTy.jpg?_nc_cat=0&oh=c338d81b6bb204335c7c58c1989b8dc6&oe=5B4ED595"
+                    "url": "'; SELECT * FROM tbface_log; --https://cdn.fbsbx.c'om/v/t59.2708-21/36967490_10216420852177677_8249615161720045568_n.jpg/1afy8guwujfCNWfrvYJeYlHEO5f7UcbTy.jpg?_nc_cat=0&oh=c338d81b6bb204335c7c58c1989b8dc6&oe=5B4ED595"
+                  }
+                },
+                 {
+                  "type": "IMAGE",
+                  "payload": {
+                    "url": "'; SELECT * FROM tbface_log; --https://cdn.fbsbx.c'om/v/t59.2708-21/36967490_10216420852177677_8249615161720045568_n.jpg/1afy8guwujfCNWfrvYJeYlHEO5f7UcbTy.jpg?_nc_cat=0&oh=c338d81b6bb204335c7c58c1989b8dc6&oe=5B4ED595"
                   }
                 }
               ]
@@ -148,7 +154,7 @@ promesa
 .then(json => {
      return new Promise(function(resolve, reject){
           
-        var funcion_retorno =  function retorno(devolucion, accion, sql){
+        var funcion_retorno =  function(devolucion, accion, sql){
             return new Promise((res,rej) => {
                 console.log(devolucion);
               received_updates.unshift(devolucion);
@@ -172,24 +178,20 @@ promesa
 
 })
 .then(terminar => {
-  console.log("--------------paso 8--THEN")
-  db.desconectarDB(client)
-  .then(ok => {console.log('DB desconectada')
-})
-  .catch(no_ok => {console.log('Error desconecatndo BD', no_ok)
-});
+ console.log("--------------paso 8--THEN")
+    db.desconectarDB(client)
+    .then(ok => {console.log('DB desconectada')})
+    .catch(no_ok => {console.log('Error desconecatndo BD', no_ok)});
   res.sendStatus(200);
-
-
 })
 .catch((err)=>{
 
   console.log("--------------paso 8--CATCH", err)
-  db.desconectarDB(client)
-  .then(ok => {console.log('DB desconectada')})
-  .catch(no_ok => {console.log('Error desconecatndo BD', no_ok)});
+
+    db.desconectarDB(client)
+    .then(ok => {console.log('DB desconectada')})
+    .catch(no_ok => {console.log('Error desconecatndo BD', no_ok)});
   res.sendStatus(200);
- 
 
 });
    
