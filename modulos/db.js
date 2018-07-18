@@ -1,9 +1,3 @@
-const tbface_log                = "tbface_log";
-const tbface_usuario            = "tbface_usuario";
-const tbface_page               = "tbface_page";
-const tbface_mensaje            = "tbface_mensaje";
-const tbface_permiso_face_page  = "tbface_permiso_face_page";
-const tbface_attachments        = "tbface_attachment";
 const config                    = require('./conf'); 
 const conString                 =  config.conString; 
 const pg          =   require('pg');
@@ -44,7 +38,7 @@ module.exports.desconectarDB = function(conexion){
 module.exports.insertarATTACHMENTS = function(json, funcion_retorno, client){
   return new Promise((resolve, reject) => {
     if(json){ 
-      sql_insertar_atachments = sqlstring.format("INSERT INTO "+tbface_attachments+"(id_interaccion, type, url) VALUES( ?, ?, ? )",
+      sql_insertar_atachments = sqlstring.format("INSERT INTO "+config.tbface.attachments+"(id_interaccion, type, url) VALUES( ?, ?, ? )",
       [json.id_interaccion,json.attachments_type,json.attachments_payload_url]);
       //console.log(sql_insertar_atachments)
       client.query(sql_insertar_atachments)
@@ -67,7 +61,7 @@ module.exports.insertarATTACHMENTS = function(json, funcion_retorno, client){
 module.exports.consultar_page = function(json_id_page, funcion_retorno, client){
   return new Promise((resolve, reject)=>{
     if(json_id_page){
-      sql_consultar_page=sqlstring.format("SELECT * FROM "+tbface_page+" WHERE id_page = ?", [json_id_page]);
+      sql_consultar_page=sqlstring.format("SELECT * FROM "+config.tbface.page+" WHERE id_page = ?", [json_id_page]);
       console.log(sql_consultar_page);
       client.query(sql_consultar_page)
       .then(page_exist => {
@@ -92,7 +86,7 @@ module.exports.consultar_usuario = function(psid, funcion_existencia, conexion){
   return new Promise((res , rej) => {
     if(psid){
       funcion_existencia({"Dentro de funcion consultar_usuario()" : "OK"});
-      sql_consultar_usuario = sqlstring.format("SELECT * FROM "+tbface_usuario+" where psid_webhook_usuario = ? ",[psid]);
+      sql_consultar_usuario = sqlstring.format("SELECT * FROM "+config.tbface.usuario+" where psid_webhook_usuario = ? ",[psid]);
       funcion_existencia({" Query para insertar" : sql_consultar_usuario});
       conexion.query(sql_consultar_usuario)
       .then(result => {
@@ -124,14 +118,14 @@ module.exports.consultar_usuario = function(psid, funcion_existencia, conexion){
 module.exports.insertarUSER = function(json, funcion_retorno, client){
   return new Promise((resolve, reject)=> {
     if (json && client){
-      var sql_insertar_user = sqlstring.format("INSERT INTO "+tbface_usuario+"(psid_webhook_usuario,id_page,fecha_actualizacion)"+
+      var sql_insertar_user = sqlstring.format("INSERT INTO "+config.tbface.usuario+"(psid_webhook_usuario,id_page,fecha_actualizacion)"+
         " VALUES(?, ?, now()); SELECT currval('tbface_usuario_id_usuario_seq'); ",[json.psid_webhook_usuario,json.id_page]);
       console.log(sql_insertar_user);
       client.query(sql_insertar_user)
       .then(result => {
-        console.log("------------PASO 3.1---")
+        consoldat.log("------------PASO 3.1---")
         var currval = result[1].rows[0];
-        //console.log("Currval is: 0000000000000000000000000000000",result[1].rows[0]);
+        //consoldat.log("Currval is: 0000000000000000000000000000000",result[1].rows[0]);
         resolve(currval);
         })
       .catch(e => {
@@ -143,6 +137,13 @@ module.exports.insertarUSER = function(json, funcion_retorno, client){
         reject("JSON Vacio");
     }
   });
+}
+module.exports.resetDB = function(client){
+  return new Promise((resolve, reject)=>{
+      client.query("DELETE FROM tbface_LOG; DELETE from tbface_attachment; delete from tbface_mensaje; delete from tbface_usuario")
+      .then(res=> {resolve()})
+      .catch(rej=>{reject(rej)})
+  })
 }
 
 module.exports.insertarMSJ = function(reqbody, funcion_retorno, client){
@@ -158,15 +159,26 @@ module.exports.insertarMSJ = function(reqbody, funcion_retorno, client){
       });
     function ejecutarQuery(dato, cargarlog, client){
       return new Promise((resolve, reject)=>{
-        cargarlog({"Dentro de funcion ejecutarQuery()" : "OK"});
-        console.log("----------------PASO 3.1---- POR INSERTAR")
-        console.log("dataso : ",dato)
-        var id_interaccion = Math.floor(Math.random() * (10000 - 1)) + 1;
-        dato.mid= sqlstring.escape("'"+ Math.floor(Math.random() * (100000 - 1)) + 1+dato.mid+"'");
-        var sql_insertar_mensaje = sqlstring.format("INSERT INTO "+tbface_mensaje+
+        var dat = new Date(dato.timestamp);
+          var monts;
+          if((dat.getMonth()+1)<10){ monts='0'+(dat.getMonth()+1)}else{monts = (dat.getMonth()+1)}
+          var dates = 
+          dat.getFullYear()+"-"+monts+"-"+dat.getDate()+" "+dat.getHours()+":"+dat.getMinutes()+":"+dat.getSeconds()+".00001"
+        if(dato.saliente == 'true')
+        { 
+          dato.timestamp = 1; //esto es porque la "fecha_time" cuando es saliente
+                              //se inicializa en 1 para indicar que el mensaje fue enviado
+                              //y se actualizará cuando venga el informe de entrega del webhook
+                              //en la funcion informeEntrega()
+          dato.leido=1;
+        }else {dato.leido=0;}
+        
+        console.log("------PASO 3.1---- POR INSERTAR JSON MENSAJE")
+        //dato.mid= sqlstring.escape("'"+ Math.floor(Math.random() * (100000 - 1)) + 1+dato.mid+"'");
+        var sql_insertar_mensaje = sqlstring.format("INSERT INTO "+config.tbface.mensaje+
           " ( id_usuario, id_mensaje, fecha, fecha_time,saliente,mensaje,fecha_leido, fecha_alta"+
           ",fecha_actualizacion,oprid,estado) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?); select currval('seq_interaccion');",
-          [dato.id_usuario,dato.mid, 'now()',dato.time,dato.saliente,dato.text,'123123', 'now()', 'now()','1', '1']);
+          [dato.id_usuario,dato.mid,dates,dato.timestamp,dato.saliente,dato.text,dato.leido, 'now()', 'now()','1', '1']);
         console.log(sql_insertar_mensaje)
         client.query(sql_insertar_mensaje)
         .then((id_interaccion) => {
@@ -183,6 +195,71 @@ module.exports.insertarMSJ = function(reqbody, funcion_retorno, client){
     }
   });  
 };
+module.exports.informeEntrega = function(json, client){
+    return new Promise((resolve, reject) => {
+          var d = new Date(json.watermark);
+          var mont;
+          if((d.getMonth()+1)<10){ mont='0'+(d.getMonth()+1)}else{mont = (d.getMonth()+1)}
+          var date = 
+          d.getFullYear()+"-"+mont+"-"+d.getDate()+" "+d.getHours()+":"+d.getMinutes()+":"+d.getSeconds()+".00001"
+      if(json.watermark && json.mid){
+        var sql_informe_entrega=sqlstring.format("UPDATE "+config.tbface.mensaje+" SET fecha_time = ?, fecha_actualizacion= now() WHERE  id_mensaje = ?"
+          ,[json.watermark, json.mid])
+        console.log(sql_informe_entrega)
+        client.query(sql_informe_entrega)
+        .then((act=>{
+          console.log("UPDATE MENSAJE DELIVERY")
+          resolve(act)
+        }))
+        .catch(err_act => {
+          console.log("ERROR: UPDATE MENSAJE DELIVERY")
+          reject(err_act)
+        })
+        
+      }else if(json.midausente){
+        var sql_informe_entrega=sqlstring.format("UPDATE "+config.tbface.mensaje+" SET fecha_time = ?, fecha_actualizacion= now() WHERE  fecha <= ? and fecha_time=1"
+          ,[json.watermark, date])
+        console.log(sql_informe_entrega)
+           client.query(sql_informe_entrega)
+        .then((act=>{
+          console.log("UPDATE MENSAJE DELIVERY")
+          resolve(act)
+        }))
+        .catch(err_act => {
+          console.log("ERROR: UPDATE MENSAJE DELIVERY")
+          reject(err_act)
+        })
+        
+      }else
+      {
+        reject("Faltan datos para actualizar msj de entrega");
+      }
+    })        
+
+}
+module.exports.actualizarMSJ = function(json, client){
+  return new Promise((resolve, reject)=>{
+    if(json.watermark){
+      var sql_actualizar_msj= sqlstring.format("UPDATE "+config.tbface.mensaje
+      +" SET fecha_leido=?, fecha_actualizacion = now() WHERE saliente = true AND fecha_time <= ? and fecha_leido=1"
+      ,[json.watermark,json.watermark]);
+      client.query(sql_actualizar_msj)
+      .then((act=>{
+        console.log("UPDATE MENSAJE READ")
+        resolve(act)
+      }))
+      .catch(err_act => {
+        console.log("ERROR: UPDATE MENSAJE READ")
+        reject(err_act)
+      })
+  }else
+  {
+    reject("Falta watermark")
+  }
+    
+  });
+  }
+
 //json: json ---
 //detalle: U comentario de lo que sucedio
 //client:  valor de conexion para la query
@@ -195,11 +272,11 @@ module.exports.cargarLOG = function(json, client, accion, data){
     if(accion){
       switch(accion){
       case 'insert':
-        sql_log = sqlstring.format("INSERT INTO "+tbface_log+"(json_data, estado, detalle) VALUES(?, ?, ?); SELECT currval('tbface_log_id_log_seq');",[JSON.stringify(json),'0', detalle]);
+        sql_log = sqlstring.format("INSERT INTO "+config.tbface.log+"(json_data, estado, detalle) VALUES(?, ?, ?); SELECT currval('tbface_log_id_log_seq');",[JSON.stringify(json),'0', detalle]);
       break;
       case 'update':
         var id_log = data.hasOwnProperty('id_log') ?  data.id_log : reject("Falta id_log para realizar UPDATE");
-      sql_log = sqlstring.format("UPDATE "+tbface_log+" SET estado= ?, detalle = ? WHERE id_log= ?;",[estado,detalle,id_log]);
+      sql_log = sqlstring.format("UPDATE "+config.tbface.log+" SET estado= ?, detalle = ? WHERE id_log= ?;",[estado,detalle,id_log]);
       break;
       default:
         return reject("La accion no es valida")
