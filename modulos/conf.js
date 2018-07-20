@@ -25,6 +25,12 @@ module.exports = {
   app_secret: process.env.APP_SECRET || 'a3e128419aa957f847fc37ee3faca4f1',
   conString: process.env.ELEPHANTSQL_URL || "postgres://admin:admin@10.30.0.231:5432/db_inscripcion",
   //tablas BD
+  tb : {
+    persona            : 'tb_persona',
+    mail: {
+      all              : 'tb_mail_all'
+    }
+  },
   tbface : {
     log                : 'tbface_log',
     usuario            : "tbface_usuario",

@@ -65,6 +65,10 @@ app.get('/facebook', function(req, res) {
 
 });
 
+ app.get('/chat', function(req, res){
+res.sendFile(__dirname + '/public/index.html');
+}); 
+
 app.get('/reset', function(req, res) {   
   logs = [];
   Received_updates = [];

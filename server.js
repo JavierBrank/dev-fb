@@ -17,6 +17,7 @@ module.exports.indentificarJSON = function(json, funcion_retorno,client){
 		var id_msj_insertado;
 		var data_log = {detalle : 'Init',
 							estado: 0};
+		var persona = {};
 
 		if (json.hasOwnProperty('object') && json.object == 'page')
 		{
@@ -42,33 +43,17 @@ module.exports.indentificarJSON = function(json, funcion_retorno,client){
 				                json_final.timestamp = messaging.timestamp;
 								switch(true){
 									case messaging.hasOwnProperty('delivery'):
-										/* JSON EJEMPLO DE DELIVERY
-										{
-										  "sender":{
-										    "id":"<PSID>"
-										  },
-										  "recipient":{
-										    "id":"<PAGE_ID>"
-										  },
-										   "delivery":{
-										      "mids":[
-										         "mid.1458668856218:ed81099e15d3f4f233"
-										      ],
-										      "watermark":1458668856253,
-										      "seq":37
-										   }
-										}*/
+									
 										//Si existe el atributo delivery quiere decir que es un informe de entrega
 										console.log("-----PASO 1.1 JSON IDENTIFICADO COMO INFORME DE ENTREGA");
-										/*j.watermark = watermark si existe sino = 0;
-											luego si existe la propiedad mids dentro de delivery(no siempre sucede segun facebook)
+										/*j.watermark = watermark si existe || sino = 0;
+											luego si existe la propiedad 'mids' dentro de delivery(no siempre sucede segun facebook)
 											recorro el array mids en busca de todos los id_mensaje
 											los almaceno en un hash junto con el watermark(fecha de entrega en bigint)
 											y el contador es para que salga de la promesa una vez que haya recorrido todo el arreglo mids
 										*/
 
 										json_final.watermark = messaging.delivery.hasOwnProperty('watermark') ? messaging.delivery.watermark : 0;
-										
 										if(messaging.delivery.hasOwnProperty('mids')){
 											var count_mids=messaging.delivery.mids.length;
 											messaging.delivery.mids.forEach((midn, indexmidn, arraymids)=>{
@@ -78,7 +63,7 @@ module.exports.indentificarJSON = function(json, funcion_retorno,client){
 												.then(mids_ok=>{
 													
 													if(indexmidn==(count_mids-1)){
-							                        		console.log("FIN: "+count_mids+" mensajes actualizados")
+							                        		console.log("FIN: "+count_mids+" Mensaje(s) Actualizado(s)")
 							                        		respuesta(mids_ok);
 							                        	}
 												})
@@ -89,10 +74,13 @@ module.exports.indentificarJSON = function(json, funcion_retorno,client){
 														
 											})
 										}else{
-											//si no se encuentra la la propiedad se actualizaran todos los mensajes
-											/*salientes que no se hayan actualizado es decir aquellos  cuyo 
-											fecha_time = 1 and fecha_leido = 1 
-											para eso le pasamos como parametro a la funcion */
+											//Si el informe de entrega viene sin mids(id_mensaje) se actualizaran todos los mensajes
+											/*salientes [que pertenezcan al usuario psid(id_webhook_usuario)] anteriores a 
+											la fecha 'watermark' que no se hayan actualizado es decir aquellos  cuyo 
+											fecha_time = 1 
+											para hacer lo siguiente necesito el PSID_webhook y el timestamp */
+											//En el caso de los "Delivery" el sender siempre va a ser PSID del usuario
+											json_final.psid_webhook_usuario = messaging.sender.id;
 											json_final.midausente = true;
 												db.informeEntrega(json_final,client)
 												.then(mids_ok=>{
@@ -135,24 +123,88 @@ module.exports.indentificarJSON = function(json, funcion_retorno,client){
 
 										db.consultar_usuario(json_final.psid_webhook_usuario,funcion_retorno,client)
 										.then(user_exist => {
+											//Verificamos si el usuario existe en la BD de chat-facebook
 											return new Promise((res, rej)=>{
 												if(user_exist){
-													json_final.id_usuario = user_exist.id_usuario;
-													res();
+													json_final.id_usuario = user_exist.id;
+													persona.id_usuario=user_exist.id;
+													res(user_exist.persona);
 												}else{
+													//Si no existe se inserta
 													console.log("Si usuario no existe entonces lo insertamos:")
 													db.insertarUSER(json_final,funcion_retorno,client)
 													.then(currval_user => {
 														console.log('Me traigo el currval: ', currval_user);
 														json_final.id_usuario=currval_user.currval;
-														res();
+														persona.id_usuario=currval_user.currval;
+														res(0);
 													})
 													.catch(error => {
 														console.log('error insertando user', error);
-														rechazo(error);
+														rej(error);
 													})
 												}
 											})
+										})
+										.then(cod_persona=>{
+											return new Promise((res, rej)=>{
+												
+												if(json_final.saliente == 'false'){
+													if(cod_persona!=0){
+													//EXiste en tb_persona
+													console.log("El usuario existe en tb_persona")
+													//SI existe en tb_persona no se parsea el texto
+													res(false)
+
+													}else{
+														console.log("El usuario es un NN")
+														res(true)
+													}
+												}else{
+													//Si es un mensaje saliente se ignora
+													res(false)
+												}
+												
+											})
+										})
+										.then(buscar_correo=>{
+											if(buscar_correo){
+												return db.buscarCorreo(json_final.text)
+											//Si no encontró un correo le dice a la funcion que sigue que no hay nada
+											}else{
+
+												return false;
+											}
+										})
+										.then(alta_cabecera_persona=>{
+											//Si captura un true quiere decir que en la funcion anterior
+											//se encontro un correo
+											if(alta_cabecera_persona){
+												persona.mail =alta_cabecera_persona.mail
+												persona.nombre =alta_cabecera_persona.nombre
+												return db.altaCabeceraPersona(persona, client)											
+											}else{
+												//sino le dice a la funcion que sigue que no hay nada para hacer
+												return false
+											}
+											
+										})
+										.then(cod_inscripto=>{
+											//Si se obtiene true o algun valor quiere decir que la cabecera fue insertada
+											if(cod_inscripto){
+												console.log("typeof(cod_inscripto)=='number'")
+												persona.cod_inscripto= cod_inscripto
+												//Retorno la promesa a la funcion que sigue
+												//Esto significa que no se va a insertar el MSJ hasta que no se haya 
+												//Insertado el mail y actualizado el USER
+												return db.altaMailPersona(persona, client)
+											}else{
+												console.log("typeof(cod_inscripto)=='false'")
+												//Sino quiere decir que sigue el camino del false de las funciones anteriores
+												//y continua el proceso normalmente a insertar msj
+												return false
+
+											}
 										})
 										.then(insert_msj => {
 											db.insertarMSJ(json_final,funcion_retorno,client)
@@ -218,8 +270,9 @@ module.exports.indentificarJSON = function(json, funcion_retorno,client){
 									case messaging.hasOwnProperty('read'):
 										console.log("-----PASO 1.1 JSON IDENTIFICADO COMO INFORME DE LECTURA")
 										//Es un informe de lectura de un mensaje entrante o saliente
-										json_final.watermark = messaging.read.hasOwnProperty('watermark') ? messaging.read.watermark : 0;
-										db.actualizarMSJ(json_final,client)
+										json_final.watermark = messaging.read.hasOwnProperty('watermark') ? messaging.read.watermark : 1;
+										json_final.psid_webhook_usuario = messaging.sender.id;
+										db.informeLECTURA(json_final,client)
 										.then(msj=>{
 											console.log(msj)
 											respuesta(msj)

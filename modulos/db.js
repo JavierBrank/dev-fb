@@ -44,7 +44,7 @@ module.exports.insertarATTACHMENTS = function(json, funcion_retorno, client){
       client.query(sql_insertar_atachments)
       .then(attachments_ok => {
         resolve(attachments_ok)
-      })
+      })  
       .catch(attachments_no_ok => {
         console.log("error atachment 111111111111111111")
         reject(attachments_no_ok)
@@ -86,14 +86,15 @@ module.exports.consultar_usuario = function(psid, funcion_existencia, conexion){
   return new Promise((res , rej) => {
     if(psid){
       funcion_existencia({"Dentro de funcion consultar_usuario()" : "OK"});
-      sql_consultar_usuario = sqlstring.format("SELECT * FROM "+config.tbface.usuario+" where psid_webhook_usuario = ? ",[psid]);
+      sql_consultar_usuario = sqlstring.format("SELECT id_usuario id, cod_persona persona FROM "+config.tbface.usuario
+                                              +" WHERE psid_webhook_usuario = ?",[psid]);
       funcion_existencia({" Query para insertar" : sql_consultar_usuario});
       conexion.query(sql_consultar_usuario)
       .then(result => {
         console.log("------------PASO 2.1---")
         console.log(sql_consultar_usuario)
         if(result.rows[0]){
-          funcion_existencia({"Resultado: " : result.rows[0]}, 'existe');
+          funcion_existencia({"Resultado: " : result.rows[0]}, 'EXISTE');
           console.log("------------PASO 2.2--EXISTE USUARIO");
           res(result.rows[0])
           }else{
@@ -118,14 +119,15 @@ module.exports.consultar_usuario = function(psid, funcion_existencia, conexion){
 module.exports.insertarUSER = function(json, funcion_retorno, client){
   return new Promise((resolve, reject)=> {
     if (json && client){
-      var sql_insertar_user = sqlstring.format("INSERT INTO "+config.tbface.usuario+"(psid_webhook_usuario,id_page,fecha_actualizacion)"+
-        " VALUES(?, ?, now()); SELECT currval('tbface_usuario_id_usuario_seq'); ",[json.psid_webhook_usuario,json.id_page]);
+      var cod_persona=0;
+      var sql_insertar_user = sqlstring.format("INSERT INTO "+config.tbface.usuario+"(psid_webhook_usuario,id_page,fecha_actualizacion, cod_persona)"+
+        " VALUES(?, ?, now(), ?); SELECT currval('tbface_usuario_id_usuario_seq'); ",[json.psid_webhook_usuario,json.id_page,cod_persona]);
       console.log(sql_insertar_user);
       client.query(sql_insertar_user)
       .then(result => {
-        consoldat.log("------------PASO 3.1---")
+        console.log("------------PASO 3.1---")
         var currval = result[1].rows[0];
-        //consoldat.log("Currval is: 0000000000000000000000000000000",result[1].rows[0]);
+        //console.log("Currval is: 0000000000000000000000000000000",result[1].rows[0]);
         resolve(currval);
         })
       .catch(e => {
@@ -159,11 +161,8 @@ module.exports.insertarMSJ = function(reqbody, funcion_retorno, client){
       });
     function ejecutarQuery(dato, cargarlog, client){
       return new Promise((resolve, reject)=>{
-        var dat = new Date(dato.timestamp);
-          var monts;
-          if((dat.getMonth()+1)<10){ monts='0'+(dat.getMonth()+1)}else{monts = (dat.getMonth()+1)}
-          var dates = 
-          dat.getFullYear()+"-"+monts+"-"+dat.getDate()+" "+dat.getHours()+":"+dat.getMinutes()+":"+dat.getSeconds()+".00001"
+       
+        var dates = convertirFecha(dato.timestamp);
         if(dato.saliente == 'true')
         { 
           dato.timestamp = 1; //esto es porque la "fecha_time" cuando es saliente
@@ -188,7 +187,7 @@ module.exports.insertarMSJ = function(reqbody, funcion_retorno, client){
         })
         .catch((e) => {
           console.log("Reject client.query(sql_insertar_mensaje) 2")
-          reject(e)
+          reject(e.message)
         })
 
       })
@@ -197,15 +196,14 @@ module.exports.insertarMSJ = function(reqbody, funcion_retorno, client){
 };
 module.exports.informeEntrega = function(json, client){
     return new Promise((resolve, reject) => {
-          var d = new Date(json.watermark);
-          var mont;
-          if((d.getMonth()+1)<10){ mont='0'+(d.getMonth()+1)}else{mont = (d.getMonth()+1)}
-          var date = 
-          d.getFullYear()+"-"+mont+"-"+d.getDate()+" "+d.getHours()+":"+d.getMinutes()+":"+d.getSeconds()+".00001"
+        //la variable -dates- contendrea el valor timestamp en fomato ISO 
+      var dates = convertirFecha(json.timestamp);
       if(json.watermark && json.mid){
         var sql_informe_entrega=sqlstring.format("UPDATE "+config.tbface.mensaje+" SET fecha_time = ?, fecha_actualizacion= now() WHERE  id_mensaje = ?"
           ,[json.watermark, json.mid])
         console.log(sql_informe_entrega)
+        //Si en el argumetno json viene un objeto con la propiedad watermark y mid
+        //entonces construyo - ejecuto la query y ya termino la funcion devolviendo un valor de Ok o Error 
         client.query(sql_informe_entrega)
         .then((act=>{
           console.log("UPDATE MENSAJE DELIVERY")
@@ -217,19 +215,57 @@ module.exports.informeEntrega = function(json, client){
         })
         
       }else if(json.midausente){
-        var sql_informe_entrega=sqlstring.format("UPDATE "+config.tbface.mensaje+" SET fecha_time = ?, fecha_actualizacion= now() WHERE  fecha <= ? and fecha_time=1"
-          ,[json.watermark, date])
-        console.log(sql_informe_entrega)
-           client.query(sql_informe_entrega)
-        .then((act=>{
-          console.log("UPDATE MENSAJE DELIVERY")
-          resolve(act)
-        }))
+        //Si no tengo los mids. 
+        /*Primero: traer el id_usuario de la tabla tbface_usuario conociendo el id_webhook_usuario(PSID)
+        Segundo: con ese id voy a aactualizar todos los registros pertenecientes a ese PISD anteriores a la fecha watermark
+        que no se hayan actualizado antes*/
+        console.log("TRAER ID")
+        var sql_traer_id =sqlstring.format("SELECT DISTINCT "+config.tbface.usuario+".id_usuario AS id FROM "+config.tbface.usuario+
+        " INNER JOIN "+config.tbface.mensaje+" ON "+config.tbface.usuario+".psid_webhook_usuario = ?",[json.psid_webhook_usuario]);
+        console.log(sql_traer_id)
+        //query para traer el ID_USUARIO
+        client.query(sql_traer_id)
+        .then(objeto_resultado=>{
+          //Aca estoy recibiendo un objeto en "objeto_resultado" con los valores de la respuesta de la query
+          //A ese objeto le extraigo el valor id_usuario accediendo a la propiedad rows la cual es un array con un objeto dentro
+          //objeto_resultado.rows[{ id : '29' }]
+          if(objeto_resultado.rows!=[]){
+            //cuando fecha_time está en valor 1 quiere decir que aun no fue entregado
+            var sql_informe_entrega=sqlstring.format(
+              "UPDATE "+config.tbface.mensaje+" "+
+              "SET fecha_time = ?, fecha_actualizacion= now() "+
+              "WHERE id_usuario=? and fecha <= ? and fecha_time=1"
+            ,[json.watermark,objeto_resultado.rows[0].id, dates])
+            console.log(sql_informe_entrega)
+            //retorno la promesa client.query() y espero la respuesta del update 
+            //en el siguiente .then() en caso de ser positiva
+            //sino caera en el .catch
+            return client.query(sql_informe_entrega)
+          }else{
+            //sino hay resultados solo retorno en objeto con el id usuario a la siguiente promesa
+            return objeto_resultado
+          }
+          
+          
+        })
+        .then(respuesta_final=>{
+          //Si existe la propiedad rowCount dentro de respuesta final
+          //la propiedad rowCount contiene la cantidad de filas afectadas con un INSERT o UPDATE devuelve 0 o 1
+          // En caso de select devuelve null
+          var rc = respuesta_final.hasOwnProperty('rowCount') ?  respuesta_final.rowCount : 0;
+          //si rc es distinto a 0 y a null entonces muestro el mensaje con la cantidad sino muestro el segundo mensaje
+          var mensaje = (rc !=0 && rc != null) ? rc+" Mensaje(s)-Actualizado(s)" : "No hay mensajes que actualizar"
+          console.log(mensaje)
+          resolve()
+          
+        })
         .catch(err_act => {
           console.log("ERROR: UPDATE MENSAJE DELIVERY")
           reject(err_act)
         })
         
+        
+           
       }else
       {
         reject("Faltan datos para actualizar msj de entrega");
@@ -237,17 +273,44 @@ module.exports.informeEntrega = function(json, client){
     })        
 
 }
-module.exports.actualizarMSJ = function(json, client){
+module.exports.informeLECTURA = async function(json, client){
   return new Promise((resolve, reject)=>{
     if(json.watermark){
-      var sql_actualizar_msj= sqlstring.format("UPDATE "+config.tbface.mensaje
-      +" SET fecha_leido=?, fecha_actualizacion = now() WHERE saliente = true AND fecha_time <= ? and fecha_leido=1"
-      ,[json.watermark,json.watermark]);
-      client.query(sql_actualizar_msj)
-      .then((act=>{
-        console.log("UPDATE MENSAJE READ")
-        resolve(act)
+      json.watermark_converter = convertirFecha(json.watermark)
+      var sql_traer_id =sqlstring.format("SELECT DISTINCT "+config.tbface.usuario+".id_usuario AS id FROM "+config.tbface.usuario+
+        " INNER JOIN "+config.tbface.mensaje+" ON "+config.tbface.usuario+".psid_webhook_usuario = ?",[json.psid_webhook_usuario]);
+      
+      client.query(sql_traer_id)
+      .then((id_usuario=>{
+        return new Promise((res,rej)=>{
+          console.log("OBTENIENDO ID_USUARIO ")
+          console.log("Sql: ",sql_traer_id)
+          if(id_usuario.rows[0]){
+            res(id_usuario.rows[0].id)
+          }else{
+            rej(id_usuario)
+          }
+        })
+        
       }))
+      .then(user_id=>{
+        var sql_actualizar_msj= sqlstring.format("UPDATE "+config.tbface.mensaje
+        +" SET fecha_leido=?, fecha_actualizacion = now() WHERE id_usuario=? AND saliente = true AND fecha <= ? and fecha_leido=1"
+        ,[json.watermark,user_id,json.watermark_converter]);
+        console.log("ACTUALIZANDO REGISTROS ")
+          console.log("Sql: ",sql_actualizar_msj)
+        return client.query(sql_actualizar_msj)
+
+      })
+      .then(resultado_final=>{
+        if(resultado_final.rowCount!=0){
+          console.log(resultado_final.rowCount+" Mensaje(s) atcualizado(s)")
+        }else{
+          console.log("No hay mensajes que actualizar")
+        }
+        console.log("res final::",resultado_final)
+        resolve();
+      })
       .catch(err_act => {
         console.log("ERROR: UPDATE MENSAJE READ")
         reject(err_act)
@@ -269,6 +332,7 @@ module.exports.cargarLOG = function(json, client, accion, data){
     var sql_log;
     var estado = data.hasOwnProperty('estado') ?  data.estado : 0;
     var detalle = data.hasOwnProperty('detalle') ?  data.detalle : 'none';
+
     if(accion){
       switch(accion){
       case 'insert':
@@ -295,6 +359,136 @@ module.exports.cargarLOG = function(json, client, accion, data){
     
   });
 };
+
+
+
+var convertirFecha = function(timestamp){
+ 
+    try{
+       if(timestamp){
+          var dat = new Date(timestamp);
+          var monts,
+              day,
+              fecha;
+          //getMonth() devuelve el mes(0-11) 0=enero..11=Diciembre. por eso se hace este if, para anteponer un cero y sumar 1
+          if((dat.getMonth()+1)<10){
+            monts='0'+(dat.getMonth()+1)
+          }else{
+            monts = (dat.getMonth()+1)
+          }
+          //getData() devuelve el dia(1-31) pero en un un mes menor a 10 devuelve un solo digito, 
+          //por eso cuando sea un solo digito se le antepondrá el cero
+          if((dat.getDate())<10){
+            day='0'+dat.getDate()
+          }else{
+            day = dat.getDate()
+          }
+          fecha = dat.getFullYear()+"-"+monts+"-"+day+" "+dat.getHours()+":"+dat.getMinutes()+":"+dat.getSeconds()+"."+dat.getMilliseconds()
+           return fecha
+        }else{
+         throw new Error("Falta el timestamp");
+        }
+    }catch(error){
+         throw error
+    }
+   
+ 
+}
+  
+module.exports.buscarCorreo = function(texto){
+  return new Promise((resolve, reject)=>{
+   
+    if(texto){
+      var expr_reg =/[a-z\d._%+-]+@[a-z\d.-]+\.[a-z]{2,4}\b/i
+      var persona = {}
+      //text.match()busca la expresion regular(mail) dentro del texto y devuelve un array
+      var indice = texto.match(expr_reg)
+      if(indice){
+        //en la posicion 0 del array se encuentra el mail
+        persona.mail = indice[0]
+        //split() devuelve un array en la posicion[0] esta lo que está a la izquierda del @ 
+        // en la posicion 1 el dominio del mail
+        persona.nombre = indice[0].split('@')[0]+'@'
+        console.log("Nombre es: "+persona.nombre+" Mail: "+persona.mail)
+      }else{
+        console.log("No se ha encontrado ninguna coincidencia",indice)
+        //se retonra false para que la funcion que obtiene este valor no continue el proceso
+        return resolve(false)
+      }
+      resolve(persona)
+    }else{
+      console.error("Falta texto en funcion buscarCorreo")
+      resolve(false)
+    }
+  })
+}
+module.exports.altaCabeceraPersona = function(persona, client){
+  return new Promise((resolve, reject)=>{
+    if(persona){
+      var sql_alta_cabecera_persona=sqlstring.format("INSERT INTO "+config.tb.persona+"(nombre) VALUES(?);SELECT CURRVAL('seq_inscripcion');",[persona.nombre])
+      console.log("SQL ALTA CABECERA:")
+      console.log(sql_alta_cabecera_persona)
+      client.query(sql_alta_cabecera_persona)
+      .then(re=>{
+        console.log("Resultado cod_inscripto", re)
+        // en "re" capturamos un array con dos elementos en cada uno la respuesta de cada query
+        // en el elemento 0 (re[0]) se encuentra el Objeto Result del INSERT que no interesa
+        // En el elemento 1 (re[1]) se encuentra el Objeto Result del SELECT CURRAL 
+        // y en la propiedad rows de re[1] se encuentra un array con las filas devueltas
+        // en este caso una sola fila con un solo atributo "currval" como propiedad del objeto
+        let cod_inscripto = re[1].rows[0].currval
+        console.log("cod_inscripto=",cod_inscripto)
+        resolve(cod_inscripto)        
+        
+      })
+      .catch(error=>{
+        console.error("Error insertando cabecera persona")
+        reject(error)
+      })
+    }
+  })
+
+}
+module.exports.altaMailPersona = function(p,client){
+  return new Promise((resolve, reject)=>{
+    if(p){
+      p.tipo='P'
+      p.mail_tipo=7
+      p.desde= 'Facebook_Chat'
+      var sql_alta_mail_persona = sqlstring.format("INSERT INTO "+config.tb.mail.all+"(cod_inscripto, mail, tipo, desde, mail_tipo) VALUES"+
+        "(?, ?, ?, ?, ? );",[p.cod_inscripto, p.mail, p.tipo, p.desde, p.mail_tipo])
+            console.log("SQL ALTA MAIL:")
+      console.log(sql_alta_mail_persona)
+      client.query(sql_alta_mail_persona)
+      .then(mail_insertado=>{
+        //Si el INSERT se concreta exitosamente se muestra un mensaje
+        console.log(mail_insertado.rowCount+" Nuevo mail insertado BD")
+        return (mail_insertado)
+      })
+      .then(actualizar_usuario=>{
+        console.log("actualizando user")
+        var sql_actualizar_user=sqlstring.format("UPDATE "+config.tbface.usuario+
+          " SET cod_persona=? WHERE ID_USUARIO = ?",[p.cod_inscripto, p.id_usuario])
+        console.log("SQL ACTUALIZAR USER")
+        console.log(sql_actualizar_user)
+        //Se retorna la promesa query a la siguiente promesa 
+        return client.query(sql_actualizar_user)
+      })
+      .then(user_update=>{
+        //SI la query UPDATE USER salió bien cae aca el resultado
+        console.log(user_update.rowCount+" Usuario actualizado --- ID:"+p.id_usuario+" COD_PERSONA: "+p.cod_inscripto)
+        resolve(user_update)
+      })
+      .catch(error_mail=>{
+        //Si cualquiera de las querys salio mal cae aca
+        console.error("Error en la funcion altaMailPersona()", error_mail.message)
+        reject(error_mail)
+      })
+    }else{
+      reject("Falta el objeto persona para insertar mail")
+    }
+  })
+}
 /*
 ---------------------
 ----tbface_mensaje---
