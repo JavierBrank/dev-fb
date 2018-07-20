@@ -191,16 +191,16 @@ app.post('/facebook', function(req, res) {
 
     console.log("--------------paso 8--THEN")
     db.desconectarDB(client)
-    .then(ok => {console.log('DB desconectada')})
-    .catch(no_ok => {console.log('Error desconecatndo BD', no_ok)});
+    .then(ok => {console.log('DB desconectada');received_updates.unshift({"Desconectado DB " : "OK"});})
+    .catch(no_ok => {console.log('Error desconecatndo BD', no_ok);received_updates.unshift({"Desconectado DB " : "Error"});});
     res.sendStatus(200);
   })
   .catch((err)=>{
 
     console.log("--------------paso 8--CATCH", err)
     db.desconectarDB(client)
-    .then(ok => {console.log('DB desconectada')})
-    .catch(no_ok => {console.log('Error desconecatndo BD', no_ok)});
+    .then(ok => {console.log('DB desconectada');received_updates.unshift({"Desconectado DB " : "OK"});})
+    .catch(no_ok => {console.log('Error desconecatndo BD', no_ok);received_updates.unshift({"Desconectado DB " : "Error"});});
     res.sendStatus(200);
 
   });
