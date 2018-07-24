@@ -15,6 +15,7 @@
     "express-x-hub": "^1.0.4",
     "fs": "0.0.1-security",
     "pg": "^7.4.3",
+    "request": "^2.87.0",
     "sqlstring": "^2.3.1"
   }
 }

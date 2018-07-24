@@ -1,5 +1,6 @@
 const db = require('./modulos/db');;
 const sqlstring = require('sqlstring');
+const request = require("request");
 
 
 module.exports.indentificarJSON = function(json, funcion_retorno,client){
@@ -14,6 +15,7 @@ module.exports.indentificarJSON = function(json, funcion_retorno,client){
 		var attachments_payload_url = "URl";
 		var psid_webhook_usuario = "PSID user";
 		var json_final={};
+		var json_page = {};
 		var id_msj_insertado;
 		var data_log = {detalle : 'Init',
 							estado: 0};
@@ -30,7 +32,9 @@ module.exports.indentificarJSON = function(json, funcion_retorno,client){
 				json_final.time=json.entry[0].time;
 				db.consultar_page(json_final.id_page, funcion_retorno, client)
 				.then(page_ok=>{
-					if(page_ok){
+					if(page_ok.enabled){
+						json_page.id = page_ok.id
+						json_page.token = page_ok.token
 						//recorro el array Entry[index] como entry 
 						//La funcion forEach() me retorna el primer parametro el elemeno actual del array, indice del elemnto, array
 						json.entry.forEach(function(entry, index, array_entry){
@@ -123,12 +127,13 @@ module.exports.indentificarJSON = function(json, funcion_retorno,client){
 
 										db.consultar_usuario(json_final.psid_webhook_usuario,funcion_retorno,client)
 										.then(user_exist => {
-											//Verificamos si el usuario existe en la BD de chat-facebook
 											return new Promise((res, rej)=>{
 												if(user_exist){
+													//Si usuario existe ya sea con o sin codigo de persona 
+													//le pasamos a la siguiente funcion el objeto user_exist con los tributos
 													json_final.id_usuario = user_exist.id;
 													persona.id_usuario=user_exist.id;
-													res(user_exist.persona);
+													res(user_exist);
 												}else{
 													//Si no existe se inserta
 													console.log("Si usuario no existe entonces lo insertamos:")
@@ -148,16 +153,30 @@ module.exports.indentificarJSON = function(json, funcion_retorno,client){
 										})
 										.then(cod_persona=>{
 											return new Promise((res, rej)=>{
-												
 												if(json_final.saliente == 'false'){
-													if(cod_persona!=0){
-													//EXiste en tb_persona
-													console.log("El usuario existe en tb_persona")
-													//SI existe en tb_persona no se parsea el texto
+													if(!cod_persona.mail && cod_persona.cod_persona!=0){
+														//Si el objeto cod_persona NO tiene atributo mail y 
+														//el atributo cod_persona es distinto de 0
+													persona.cod_inscripto=cod_persona.cod_persona
+													//Existe en tb_persona sin mail
+													console.log("El usuario existe en tb_persona sin mail")
+													//establecemos el atributo con_cod_persona en true del objeto persona
+													//para usarlo mas adelante
+													persona.con_cod_persona = true
+													//y le decimos a la funcion siguiente, que busca el nombre de facebook, que no lo haga
 													res(false)
 
-													}else{
+													}else if(cod_persona.mail && cod_persona.cod_persona!=0){
+														console.log("El usuarioexiste en tb_persona con mail")
+														//SI existe en tb_persona con mail no se parsea el texto
+														persona.cod_inscripto=cod_persona.cod_persona
+														persona.con_cod_persona = false
+														res(false)
+													}
+													else{
 														console.log("El usuario es un NN")
+														persona.con_cod_persona = false
+														//Le decimos a la funcion que trae el nombre de facebook que lo haga
 														res(true)
 													}
 												}else{
@@ -167,8 +186,57 @@ module.exports.indentificarJSON = function(json, funcion_retorno,client){
 												
 											})
 										})
+										.then(curl_nombre=>{
+											return new Promise((res,rej)=>{
+												if(curl_nombre){
+													//si CURL_NOMBRE es true quiere decir que el usuario es un NN
+													var url_user = 'https://graph.facebook.com/v3.0/'+json_final.psid_webhook_usuario
+													var data_user = {
+												 	method: 'GET',
+												  	url: url_user,
+												  	qs:  {
+												    	access_token: json_page.token 
+												  		}
+													}
+													console.log("CURL: ",data_user)
+													request(data_user, function (error, response, body) {
+															persona.apellido_facebook = ' '
+													      	persona.genero = ' '
+													  
+												  	if (error){
+													    console.error("ERORR!!!!!",error);
+													    res(true)
+													  } else{
+													    json = JSON.parse(body)
+													    if(json.hasOwnProperty('error')){
+													      console.log("Error con CURL:",json); 
+													      res(true)  
+													    }else{
+													      console.log("OKOKOKO: ",json);  
+													      console.log(json)
+													      persona.nombre_facebook = json.hasOwnProperty('first_name') ? json.first_name : ' '
+													      persona.apellido_facebook = json.hasOwnProperty('last_name') ? json.last_name : ' '
+													      if(json.hasOwnProperty('gender')){
+													      	persona.genero = (json.gender == 'male')	? 'M' : 'F'
+													      }
+													      persona.foto_perfil = json.hasOwnProperty('profile_pic') ? json.profile_pic : ' ' 
+													      res(true)
+													    }
+													  }  
+													});
+												}else{
+													//si curl_nombre es false es porque ya existe en tb_persona
+													//por ende no hay que buscar correo
+													res(false)
+												}
+												
+											})
+										})
 										.then(buscar_correo=>{
-											if(buscar_correo){
+											console.log("BUSCAR_CORREO:"+typeof(buscar_correo)+" concod:"+typeof(persona.con_cod_persona))
+											if(buscar_correo || persona.con_cod_persona){
+												//Si buscar_correo es true O la persona tiene cod_persona pero no mail
+													console.log("DENTROOOOOOOOOOOOOO")
 												return db.buscarCorreo(json_final.text)
 											//Si no encontró un correo le dice a la funcion que sigue que no hay nada
 											}else{
@@ -178,12 +246,13 @@ module.exports.indentificarJSON = function(json, funcion_retorno,client){
 										})
 										.then(alta_cabecera_persona=>{
 											//Si captura un true quiere decir que en la funcion anterior
-											//se encontro un correo
+											//encontro un correo
 											if(alta_cabecera_persona){
 												persona.mail =alta_cabecera_persona.mail
 												persona.nombre =alta_cabecera_persona.nombre
-												return db.altaCabeceraPersona(persona, client)											
+												return db.altaCabeceraPersona(persona, client)
 											}else{
+												console.log("alta_cabecera_persona false else")
 												//sino le dice a la funcion que sigue que no hay nada para hacer
 												return false
 											}
@@ -296,8 +365,8 @@ module.exports.indentificarJSON = function(json, funcion_retorno,client){
 					});//fin foreach entry
 					}else{
 						//CAE AQUI SI LA PAGINA NO EXISTE EN LA BD
-						funcion_retorno({"PAGE":" No existe"},'abortar');
-						rechazo({"PAGE":" no existe ne db"},'abortar');
+						funcion_retorno({"PAGE":" No existe o se encuentra inhabiltada"},'abortar');
+						rechazo({"PAGE":"Inhabilitada o inexistente"},'abortar');
 					}
 
 					

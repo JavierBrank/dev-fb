@@ -21,9 +21,8 @@ module.exports.conectarDB = function(){
   });
 };
 
-module.exports.desconectarDB = function(conexion){
+module.exports.desconectarDB = function(client){
   return new Promise((resolve, reject)=>{
-    client = conexion;
     client.end(function(errorbd){
     if(errorbd){
       console.log("Desconcetado BD Error: ",err); 
@@ -61,13 +60,14 @@ module.exports.insertarATTACHMENTS = function(json, funcion_retorno, client){
 module.exports.consultar_page = function(json_id_page, funcion_retorno, client){
   return new Promise((resolve, reject)=>{
     if(json_id_page){
-      sql_consultar_page=sqlstring.format("SELECT * FROM "+config.tbface.page+" WHERE id_page = ?", [json_id_page]);
+      var sqlsqtring_consultar_page =  "SELECT id_page id, token_page token, habilitado enabled FROM "+config.tbface.page+" WHERE id_page=?"
+      sql_consultar_page=sqlstring.format(sqlsqtring_consultar_page, [json_id_page]);
       console.log(sql_consultar_page);
       client.query(sql_consultar_page)
       .then(page_exist => {
         if(page_exist.rows[0]){
         console.log("Page exist. ",page_exist.rows[0].id_page);
-        resolve(page_exist.rows[0].id_page)
+        resolve(page_exist.rows[0])
         }else{
           //console.log(page_exist);
           resolve(false)
@@ -82,30 +82,66 @@ module.exports.consultar_page = function(json_id_page, funcion_retorno, client){
 }
 //   recibo como parametros: psid = el psid de usuario que viene de la funcion recorrer JSON
 //                      funcion_existencia 
-module.exports.consultar_usuario = function(psid, funcion_existencia, conexion){
-  return new Promise((res , rej) => {
+module.exports.consultar_usuario = function(psid, funcion_existencia, client){
+  return new Promise((resolve , reject) => {
     if(psid){
+      var persona = {};
       funcion_existencia({"Dentro de funcion consultar_usuario()" : "OK"});
       sql_consultar_usuario = sqlstring.format("SELECT id_usuario id, cod_persona persona FROM "+config.tbface.usuario
                                               +" WHERE psid_webhook_usuario = ?",[psid]);
       funcion_existencia({" Query para insertar" : sql_consultar_usuario});
-      conexion.query(sql_consultar_usuario)
+      client.query(sql_consultar_usuario)
       .then(result => {
         console.log("------------PASO 2.1---")
         console.log(sql_consultar_usuario)
         if(result.rows[0]){
+          //Si el usuario existe en la base de datos de chat-facebook pregunto si tiene cod_persona dsitinto de 0
           funcion_existencia({"Resultado: " : result.rows[0]}, 'EXISTE');
-          console.log("------------PASO 2.2--EXISTE USUARIO");
-          res(result.rows[0])
+          persona.id = result.rows[0].id;
+          persona.cod_persona = result.rows[0].persona;
+          persona.mail = false;
+          console.log("------------PASO 2.2--EXISTE USUARIO EN tbface_usuario");
+          //resolve(result.rows[0])
+          if(result.rows[0].persona!=0){
+            console.log("Tiene codigo de persona: ", persona.cod_persona)
+            //si tiene cod_persona distinto de cero me fijo si tiene mail
+            var sql_consultar_mail= sqlstring.format(
+                                    "SELECT DISTINCT m.mail correo FROM tb_mail_all m "+
+                                    "INNER JOIN tb_persona p "+
+                                    "ON p.cod_inscripto = m.cod_inscripto "+
+                                    "AND p.cod_inscripto= ?",[result.rows[0].persona])
+            console.log("SQL_CONSULAR_MAIL",sql_consultar_mail)
+            client.query(sql_consultar_mail)
+            .then(mail_ok=>{
+              if(mail_ok.rows[0]){
+                console.log("Tiene mail: ",mail_ok.rows[0].correo)
+                persona.mail = mail_ok.rows[0].correo
+                //devuelvo persona con mail
+                resolve(persona)
+              }else{
+                console.error("No tiene mail")
+                resolve(persona)
+              }
+              
+            })
+            .catch(mail_error=>{
+              console.log(mail_error)
+              reject(mail_error)
+            })
+          }else{
+            //Devuelvo usuario con codigo persona = 0
+            resolve(persona)
+          }
+          
           }else{
             console.log("------------PASO 2.2--NO EXISTE USUARIO");
-            res(false);
+            resolve(false);
         }
                                   
         })
       .catch(e => {
         funcion_existencia({"Error: " : e.stack});
-        console.log("Reject conexion.query(sql_consultar_usuario)")
+        console.log("Reject client.query(sql_consultar_usuario)")
         rej(e);
         })
       }else{
@@ -132,7 +168,7 @@ module.exports.insertarUSER = function(json, funcion_retorno, client){
         })
       .catch(e => {
         funcion_retorno({"Error: " : e.stack});
-        console.log("Reject conexion.query(sql_consultar_usuario)")
+        console.log("Reject client.query(sql_consultar_usuario)")
         reject(e);
       })
       }else{
@@ -410,12 +446,13 @@ module.exports.buscarCorreo = function(texto){
         // en la posicion 1 el dominio del mail
         persona.nombre = indice[0].split('@')[0]+'@'
         console.log("Nombre es: "+persona.nombre+" Mail: "+persona.mail)
+         resolve(persona)
       }else{
         console.log("No se ha encontrado ninguna coincidencia",indice)
         //se retonra false para que la funcion que obtiene este valor no continue el proceso
         return resolve(false)
       }
-      resolve(persona)
+     
     }else{
       console.error("Falta texto en funcion buscarCorreo")
       resolve(false)
@@ -425,20 +462,31 @@ module.exports.buscarCorreo = function(texto){
 module.exports.altaCabeceraPersona = function(persona, client){
   return new Promise((resolve, reject)=>{
     if(persona){
-      var sql_alta_cabecera_persona=sqlstring.format("INSERT INTO "+config.tb.persona+"(nombre) VALUES(?);SELECT CURRVAL('seq_inscripcion');",[persona.nombre])
+      var p = persona;
+      //Si la persona ya tiene un cod_persona no se inserta la cabecera solo se devuelve el cod_inscripto de la persona
+      if(persona.con_cod_persona){
+        return resolve(persona.cod_inscripto)
+      }
+      if(p.hasOwnProperty('nombre_facebook'))
+
+      {
+        p.nombre= (p.nombre_facebook != ' ') ? p.nombre_facebook : p.nombre
+      }
+      var string_sql = "INSERT INTO "+config.tb.persona+"(nombre, apellido, sexo) VALUES(?, ?, ?); SELECT CURRVAL('seq_inscripcion');";
+      var sql_alta_cabecera_persona=sqlstring.format(string_sql,[p.nombre, persona.apellido_facebook, persona.genero])
       console.log("SQL ALTA CABECERA:")
       console.log(sql_alta_cabecera_persona)
       client.query(sql_alta_cabecera_persona)
       .then(re=>{
         console.log("Resultado cod_inscripto", re)
-        // en "re" capturamos un array con dos elementos en cada uno la respuesta de cada query
+        // en "re" capturamos un array con dos elementos; en cada uno la respuesta de cada query
         // en el elemento 0 (re[0]) se encuentra el Objeto Result del INSERT que no interesa
         // En el elemento 1 (re[1]) se encuentra el Objeto Result del SELECT CURRAL 
         // y en la propiedad rows de re[1] se encuentra un array con las filas devueltas
         // en este caso una sola fila con un solo atributo "currval" como propiedad del objeto
         let cod_inscripto = re[1].rows[0].currval
         console.log("cod_inscripto=",cod_inscripto)
-        resolve(cod_inscripto)        
+        resolve(cod_inscripto)     
         
       })
       .catch(error=>{
@@ -466,16 +514,18 @@ module.exports.altaMailPersona = function(p,client){
         return (mail_insertado)
       })
       .then(actualizar_usuario=>{
+        if(p.con_cod_persona){return resolve(actualizar_usuario)} 
         console.log("actualizando user")
         var sql_actualizar_user=sqlstring.format("UPDATE "+config.tbface.usuario+
           " SET cod_persona=? WHERE ID_USUARIO = ?",[p.cod_inscripto, p.id_usuario])
         console.log("SQL ACTUALIZAR USER")
         console.log(sql_actualizar_user)
-        //Se retorna la promesa query a la siguiente promesa 
+        //Se retorna la promesa_query a la siguiente promesa 
+
         return client.query(sql_actualizar_user)
       })
       .then(user_update=>{
-        //SI la query UPDATE USER salió bien cae aca el resultado
+        //SI la query UPDATE sql_actualizar_user salió bien cae aca el resultado
         console.log(user_update.rowCount+" Usuario actualizado --- ID:"+p.id_usuario+" COD_PERSONA: "+p.cod_inscripto)
         resolve(user_update)
       })
