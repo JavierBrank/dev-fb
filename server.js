@@ -6,14 +6,6 @@ const request = require("request");
 module.exports.indentificarJSON = function(json, funcion_retorno,client){
 	return new Promise((respuesta, rechazo) => {
 		console.log("-----------PASO 1----IDENTIFICANDO JSON")
-		var id_page = "ID de pagina";
-		var mid = "ID de mensaje";
-		var text = "Texto del mensaje";
-		var saliente = "false";
-		var attachments = false;
-		var attachments_type = "Image / Video";
-		var attachments_payload_url = "URl";
-		var psid_webhook_usuario = "PSID user";
 		var json_final={};
 		var json_page = {};
 		var id_msj_insertado;
@@ -30,7 +22,7 @@ module.exports.indentificarJSON = function(json, funcion_retorno,client){
 			{
 				json_final.id_page=json.entry[0].id;
 				json_final.time=json.entry[0].time;
-				db.consultar_page(json_final.id_page, funcion_retorno, client)
+				db.consultarPage(json_final.id_page, funcion_retorno, client)
 				.then(page_ok=>{
 					if(page_ok.enabled){
 						json_page.id = page_ok.id
@@ -50,7 +42,7 @@ module.exports.indentificarJSON = function(json, funcion_retorno,client){
 									
 										//Si existe el atributo delivery quiere decir que es un informe de entrega
 										console.log("-----PASO 1.1 JSON IDENTIFICADO COMO INFORME DE ENTREGA");
-										/*j.watermark = watermark si existe || sino = 0;
+										/*j.watermark = watermark si existe sino = 0;
 											luego si existe la propiedad 'mids' dentro de delivery(no siempre sucede segun facebook)
 											recorro el array mids en busca de todos los id_mensaje
 											los almaceno en un hash junto con el watermark(fecha de entrega en bigint)
@@ -100,7 +92,7 @@ module.exports.indentificarJSON = function(json, funcion_retorno,client){
 										
 									break;
 									case messaging.hasOwnProperty('message'):
-										db.cargarLOG(json, client,'insert',data_log)
+										db.guardarLog(json, client,'insert',data_log)
 										.then(log_ok =>{data_log.id_log = log_ok;console.log("Log insertado", log_ok)})
 									 	.catch(log_nook=>{console.log("Log no insertado", log_nook)})
 										json_final.mid = messaging.message.mid;
@@ -109,7 +101,7 @@ module.exports.indentificarJSON = function(json, funcion_retorno,client){
 										}else{
 											json_final.text = "'adjunto'";
 										}
-										if(messaging.message.hasOwnProperty('attachments')){attachments=true;}
+										if(messaging.message.hasOwnProperty('attachments')){adjuntos=true;}
 										//si dentro de message existe la propiedad 'is_echo' quiere decir que es un mensaje saliente
 										if(messaging.message.hasOwnProperty('is_echo'))
 										{	
@@ -125,19 +117,19 @@ module.exports.indentificarJSON = function(json, funcion_retorno,client){
 											console.log("-----PASO 1.1 JSON IDENTIFICADO COMO MENSAJE ENTRANTE PSID",json_final.psid_webhook_usuario)
 										}
 
-										db.consultar_usuario(json_final.psid_webhook_usuario,funcion_retorno,client)
+										db.consultarUsuario(json_final.psid_webhook_usuario,funcion_retorno,client)
 										.then(user_exist => {
 											return new Promise((res, rej)=>{
 												if(user_exist){
 													//Si usuario existe ya sea con o sin codigo de persona 
-													//le pasamos a la siguiente funcion el objeto user_exist con los tributos
+													//le pasamos a la siguiente funcion el objeto user_exist con los atributos
 													json_final.id_usuario = user_exist.id;
 													persona.id_usuario=user_exist.id;
 													res(user_exist);
 												}else{
 													//Si no existe se inserta
 													console.log("Si usuario no existe entonces lo insertamos:")
-													db.insertarUSER(json_final,funcion_retorno,client)
+													db.insertarUsuario(json_final,funcion_retorno,client)
 													.then(currval_user => {
 														console.log('Me traigo el currval: ', currval_user);
 														json_final.id_usuario=currval_user.currval;
@@ -276,19 +268,19 @@ module.exports.indentificarJSON = function(json, funcion_retorno,client){
 											}
 										})
 										.then(insert_msj => {
-											db.insertarMSJ(json_final,funcion_retorno,client)
+											db.insertarMensaje(json_final,funcion_retorno,client)
 											.then(insertar_log=>{
 												id_msj_insertado = insertar_log;
 												data_log.estado=1;
 												data_log.detalle ='mensaje insertado';
-						                      	return db.cargarLOG(json,client,'update',data_log)
+						                      	return db.guardarLog(json,client,'update',data_log)
 						                      	.then(ok_log => {console.log("UPDATE LOG OK :",ok_log)})
 						                      	.catch(error_log => {console.log(error_log)})
 							                    console.log("mensaje instertado en la base");
 											})
 											.then((currval) => {
 												
-							                    if(attachments){
+							                    if(adjuntos){
 							                       	console.log('atachments true');
 							                       	json_final.id_interaccion = id_msj_insertado; 
 							                    	var count_attachs = messaging.message.attachments.length;
@@ -297,7 +289,7 @@ module.exports.indentificarJSON = function(json, funcion_retorno,client){
 
 							                        json_final.attachments_type = attach0.type
 							                        json_final.attachments_payload_url= attach0.payload.url;
-							                        db.insertarATTACHMENTS(json_final, funcion_retorno, client)
+							                        db.insertarAdjunto(json_final, funcion_retorno, client)
 							                        .then(attach => {
 							                        	console.log("atachments "+index_attach+"  Insertado")
 							                        	if(index_attach==(count_attachs-1)){
@@ -341,7 +333,7 @@ module.exports.indentificarJSON = function(json, funcion_retorno,client){
 										//Es un informe de lectura de un mensaje entrante o saliente
 										json_final.watermark = messaging.read.hasOwnProperty('watermark') ? messaging.read.watermark : 1;
 										json_final.psid_webhook_usuario = messaging.sender.id;
-										db.informeLECTURA(json_final,client)
+										db.informeLectura(json_final,client)
 										.then(msj=>{
 											console.log(msj)
 											respuesta(msj)
@@ -370,7 +362,7 @@ module.exports.indentificarJSON = function(json, funcion_retorno,client){
 					}
 
 					
-				})//Cierre promesa consultar_page()
+				})//Cierre promesa consultarPage()
 				.catch(page_error => {
 					console.log(page_error		)
 					//CAE AQUI SI LA PAGINA NO EXISTE EN LA BD

@@ -34,7 +34,7 @@ module.exports.desconectarDB = function(client){
   });
 }
 
-module.exports.insertarATTACHMENTS = function(json, funcion_retorno, client){
+module.exports.insertarAdjunto = function(json, funcion_retorno, client){
   return new Promise((resolve, reject) => {
     if(json){ 
       sql_insertar_atachments = sqlstring.format("INSERT INTO "+config.tbface.attachments+"(id_interaccion, type, url) VALUES( ?, ?, ? )",
@@ -57,7 +57,7 @@ module.exports.insertarATTACHMENTS = function(json, funcion_retorno, client){
   })
 }
 
-module.exports.consultar_page = function(json_id_page, funcion_retorno, client){
+module.exports.consultarPage = function(json_id_page, funcion_retorno, client){
   return new Promise((resolve, reject)=>{
     if(json_id_page){
       var sqlsqtring_consultar_page =  "SELECT id_page id, token_page token, habilitado enabled FROM "+config.tbface.page+" WHERE id_page=?"
@@ -82,7 +82,7 @@ module.exports.consultar_page = function(json_id_page, funcion_retorno, client){
 }
 //   recibo como parametros: psid = el psid de usuario que viene de la funcion recorrer JSON
 //                      funcion_existencia 
-module.exports.consultar_usuario = function(psid, funcion_existencia, client){
+module.exports.consultarUsuario = function(psid, funcion_existencia, client){
   return new Promise((resolve , reject) => {
     if(psid){
       var persona = {};
@@ -152,7 +152,7 @@ module.exports.consultar_usuario = function(psid, funcion_existencia, client){
   });
 }
 
-module.exports.insertarUSER = function(json, funcion_retorno, client){
+module.exports.insertarUsuario= function(json, funcion_retorno, client){
   return new Promise((resolve, reject)=> {
     if (json && client){
       var cod_persona=0;
@@ -184,7 +184,7 @@ module.exports.resetDB = function(client){
   })
 }
 
-module.exports.insertarMSJ = function(reqbody, funcion_retorno, client){
+module.exports.insertarMensaje = function(reqbody, funcion_retorno, client){
   return new Promise((res, rej)=>{
     ejecutarQuery(reqbody, funcion_retorno, client)
     .then((id_interacion_msj)=>{
@@ -278,7 +278,7 @@ module.exports.informeEntrega = function(json, client){
             //sino caera en el .catch
             return client.query(sql_informe_entrega)
           }else{
-            //sino hay resultados solo retorno en objeto con el id usuario a la siguiente promesa
+            //si no hay resultados solo retorno en objeto con el id usuario a la siguiente promesa
             return objeto_resultado
           }
           
@@ -286,7 +286,7 @@ module.exports.informeEntrega = function(json, client){
         })
         .then(respuesta_final=>{
           //Si existe la propiedad rowCount dentro de respuesta final
-          //la propiedad rowCount contiene la cantidad de filas afectadas con un INSERT o UPDATE devuelve 0 o 1
+          //la propiedad rowCount contiene la cantidad de filas afectadas con un INSERT o UPDATE devuelve 0 o n 
           // En caso de select devuelve null
           var rc = respuesta_final.hasOwnProperty('rowCount') ?  respuesta_final.rowCount : 0;
           //si rc es distinto a 0 y a null entonces muestro el mensaje con la cantidad sino muestro el segundo mensaje
@@ -309,7 +309,7 @@ module.exports.informeEntrega = function(json, client){
     })        
 
 }
-module.exports.informeLECTURA = async function(json, client){
+module.exports.informeLectura = async function(json, client){
   return new Promise((resolve, reject)=>{
     if(json.watermark){
       json.watermark_converter = convertirFecha(json.watermark)
@@ -363,7 +363,7 @@ module.exports.informeLECTURA = async function(json, client){
 //detalle: U comentario de lo que sucedio
 //client:  valor de conexion para la query
 // accion: si se debe insertar o actualizar
-module.exports.cargarLOG = function(json, client, accion, data){
+module.exports.guardarLog = function(json, client, accion, data){
   return new Promise((resolve, reject)=>{
     var sql_log;
     var estado = data.hasOwnProperty('estado') ?  data.estado : 0;

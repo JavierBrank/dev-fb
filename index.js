@@ -24,7 +24,6 @@ var xhub           = require('express-x-hub');
 var db             = require('./modulos/db');
 var server         = require('./server');
 var logs           = [];
-var pages          = [];
 var client;
 //var clave = fs.readFileSync('./.well-known/acme-challenge/zZGrLXIUwz4Jze2kGpAsUDW8FIlvn1A5xIiVy2DrSss','utf8')
 //const connectionString =  'postgres://admi.n:admin@10.30.0.231:5432/db_inscripcion';
