@@ -3,7 +3,7 @@ const sqlstring = require('sqlstring');
 const request = require("request");
 
 
-module.exports.indentificarJSON = function(json, funcion_retorno,client){
+module.exports.indentificarJSON = function(json,client){
 	return new Promise((respuesta, rechazo) => {
 		console.log("-----------PASO 1----IDENTIFICANDO JSON")
 		var json_final={};
@@ -15,14 +15,14 @@ module.exports.indentificarJSON = function(json, funcion_retorno,client){
 
 		if (json.hasOwnProperty('object') && json.object == 'page')
 		{
-			funcion_retorno({"Objeto": "page"},'ignorar')
+			
 			//si es un objeto de pagina
 			//Si existe la propiedad entry
 			if (json.hasOwnProperty('entry'))//##INICIO SI ENTRY --
 			{
 				json_final.id_page=json.entry[0].id;
 				json_final.time=json.entry[0].time;
-				db.consultarPage(json_final.id_page, funcion_retorno, client)
+				db.consultarPage(json_final.id_page, client)
 				.then(page_ok=>{
 					if(page_ok.enabled){
 						json_page.id = page_ok.id
@@ -89,7 +89,6 @@ module.exports.indentificarJSON = function(json, funcion_retorno,client){
 												})
 														
 										}
-										
 									break;
 									case messaging.hasOwnProperty('message'):
 										db.guardarLog(json, client,'insert',data_log)
@@ -109,7 +108,6 @@ module.exports.indentificarJSON = function(json, funcion_retorno,client){
 											json_final.saliente = 'true';
 											console.log("------PASO 1.1 JSON IDENTIFICADO COMO MENSAJE SALIENTE PSID",json_final.psid_webhook_usuario)
 										}else{
-											//funcion_retorno({"mensaje": "entrante"}, 'ignorar');
 											//es un mensaje saliente 
 											//Si es saliente entoncess el que recibe es el usuario
 											json_final.psid_webhook_usuario = messaging.sender.id;
@@ -117,7 +115,7 @@ module.exports.indentificarJSON = function(json, funcion_retorno,client){
 											console.log("-----PASO 1.1 JSON IDENTIFICADO COMO MENSAJE ENTRANTE PSID",json_final.psid_webhook_usuario)
 										}
 
-										db.consultarUsuario(json_final.psid_webhook_usuario,funcion_retorno,client)
+										db.consultarUsuario(json_final.psid_webhook_usuario, client)
 										.then(user_exist => {
 											return new Promise((res, rej)=>{
 												if(user_exist){
@@ -129,7 +127,7 @@ module.exports.indentificarJSON = function(json, funcion_retorno,client){
 												}else{
 													//Si no existe se inserta
 													console.log("Si usuario no existe entonces lo insertamos:")
-													db.insertarUsuario(json_final,funcion_retorno,client)
+													db.insertarUsuario(json_final, client)
 													.then(currval_user => {
 														console.log('Me traigo el currval: ', currval_user);
 														json_final.id_usuario=currval_user.currval;
@@ -268,7 +266,7 @@ module.exports.indentificarJSON = function(json, funcion_retorno,client){
 											}
 										})
 										.then(insert_msj => {
-											db.insertarMensaje(json_final,funcion_retorno,client)
+											db.insertarMensaje(json_final,client)
 											.then(insertar_log=>{
 												id_msj_insertado = insertar_log;
 												data_log.estado=1;
@@ -289,7 +287,7 @@ module.exports.indentificarJSON = function(json, funcion_retorno,client){
 
 							                        json_final.attachments_type = attach0.type
 							                        json_final.attachments_payload_url= attach0.payload.url;
-							                        db.insertarAdjunto(json_final, funcion_retorno, client)
+							                        db.insertarAdjunto(json_final,  client)
 							                        .then(attach => {
 							                        	console.log("atachments "+index_attach+"  Insertado")
 							                        	if(index_attach==(count_attachs-1)){
@@ -357,7 +355,7 @@ module.exports.indentificarJSON = function(json, funcion_retorno,client){
 					});//fin foreach entry
 					}else{
 						//CAE AQUI SI LA PAGINA NO EXISTE EN LA BD
-						funcion_retorno({"PAGE":" No existe o se encuentra inhabiltada"},'abortar');
+						
 						rechazo({"PAGE":"Inhabilitada o inexistente"},'abortar');
 					}
 
@@ -366,21 +364,21 @@ module.exports.indentificarJSON = function(json, funcion_retorno,client){
 				.catch(page_error => {
 					console.log(page_error		)
 					//CAE AQUI SI LA PAGINA NO EXISTE EN LA BD
-					funcion_retorno({"PAGE":" CONSULTAR EXISTENCIA ERROR"},'abortar');
+				
 					rechazo({"PAGE":" CONSULTAR EXISTENCIA ERROR"},'abortar');
 
 				})
 			
 			}else{
 				//si no existe la propiedad entry
-				funcion_retorno({"Entry":" No existe"},'abortar');
+				
 				rechazo({"NO es":" un mensaje"},'abortar');
 
 			}////Cierre if(entry exist)##FIN SI ENTRY --
 		}else
 		{	
 				console.log("-----------PASO 1----ERROR IDENTIFICANDO JSON")
-				funcion_retorno({"Objeto":" desconocido"},'abortar');
+				
 					rechazo({"NO es":" un mensaje"},'abortar');
 
 		} //Cierre if(object=='page')

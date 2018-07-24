@@ -64,152 +64,48 @@ app.get('/facebook', function(req, res) {
 
 });
 
- app.get('/chat', function(req, res){
-res.sendFile(__dirname + '/public/index.html');
-}); 
 
-app.get('/reset', function(req, res) {   
-  logs = [];
-  Received_updates = [];
-  res.write("log Y json reseteados");
-  res.end();
-}); 
-
-app.get('/rb', function(req, res) { 
-db.conectarDB()
-.then(clients => {
-  client =clients;
-  return db.resetDB(client)
-})
-.then(ook=>{
-  res.write("BD reseteadas", ook);
-  db.desconectarDB(client)
-  res.end();
-
-})
-.catch(error_rb=>{
-  res.write(error_rb);
-  db.desconectarDB(client)
-  res.end();  
-  });
-}); 
-
-
-app.post('/facebook', function(req, res) {
-  logs.unshift("NUEVO POST /facebook");
-  /*req.body =   {
-    "object": "page",
-    "entry": [
-      {
-        "id": "159709944504329",
-        "time": 1531943971010,
-        "messaging": [
-          {
-            "sender": {
-              "id": "1881196298614059"
-            },
-            "recipient": {
-              "id": "159709944504329"
-            },
-            "timestamp": 1531943970906,
-            "message": {
-              "mid": "fSYcNZEkq7iq6cFUmQLzVStbPz3Mkp-ies9cRyMZJpET6o-sFZy0qhpHvvWsIEa_a3ECRSdlJx0U2SWR64jBPw",
-              "seq": 73284,
-              "attachments": [
-                {
-                  "type": "image",
-                  "payload": {
-                    "url": "https://scontent.xx.fbcdn.net/v/t1.15752-9/37389962_10216439906374020_1830003041323974656_n.png?_nc_cat=0&_nc_ad=z-m&_nc_cid=0&oh=f82a916c7ccade4bd6a803fd904466b0&oe=5BD89BFE"
-                  }
-                },
-                {
-                  "type": "image",
-                  "payload": {
-                    "url": "https://scontent.xx.fbcdn.net/v/t1.15752-9/37353535_10216439906294018_6742387335121338368_n.png?_nc_cat=0&_nc_ad=z-m&_nc_cid=0&oh=97eb9708b6263c2a3e48cd4749cd1637&oe=5BD5869F"
-                  }
-                }
-              ]
-            }
-          }
-        ]
-      }
-    ]
-  };  
-   */
+app.post('/facebook', function(req, res) { 
   /*
-    if (!req.isXHubValid()) {
-      
-      errorxhub = "WAdvertencia: el encabezado de solicitud X-Hub-Signature no está presente o no es válido";
-      logs.unshift(errorxhub);
-      
-      //res.sendStatus(401);
-      //return;
-    }else{
-      logs.unshift("Encabezado de solicitud X-Hub-Signature validado");
-    }
+  if (!req.isXHubValid()) {
+    errorxhub = "Advertencia: el encabezado de solicitud X-Hub-Signature no está presente o no es válido";
+    logs.unshift(errorxhub);
+    //res.sendStatus(401);
+    //return;
+  }else{
+    logs.unshift("Encabezado de solicitud X-Hub-Signature validado");
+  }
   */
   received_updates.unshift(req.body);
-  var client;
-  let promesa = new Promise (function(resuelta , rechazada){
-    return db.conectarDB()
+  db.conectarDB()
     .then(conexion => { 
-      received_updates.unshift({"Conectado DB " : "OK"});
       client = conexion;
-      resuelta(req.body) 
+      received_updates.unshift({"Conectado DB " : "OK"});
+      return req.body
     })
-    .catch(error => {
-      received_updates.unshift({"Error Conecntando DB " : error});
-      rechazada(error)
+    .then(json => {
+      return server.indentificarJSON(json, client)
     })
-  });
-
-  promesa
-  .then(json => {
-    var funcion_retorno =  function(devolucion, accion, sql){
-        return new Promise((res,rej) => {
-          console.log(devolucion);
-          received_updates.unshift(devolucion);
-          })
-        }
-    return new Promise(function(resolve, reject){
-      server.indentificarJSON(json, funcion_retorno, client)
-      .then(json_final=>{
-        console.log("--------------paso 7")
-        console.log("Final: ",json_final)
-        resolve("ok");
-        })
-      .catch(rejej => {
-        console.log("Reject server.indentificarJSON()")
-        //console.log("ejejejjejeje",rejej)
-        reject(rejej);
-        });
-
-    });
-  })
-  .then(terminar => {
-
-    console.log("--------------paso 8--THEN")
-    db.desconectarDB(client)
-    .then(ok => {console.log('DB desconectada');received_updates.unshift({"Desconectado DB " : "OK"});})
-    .catch(no_ok => {console.log('Error desconecatndo BD', no_ok);received_updates.unshift({"Desconectado DB " : "Error"});});
-    res.sendStatus(200);
-  })
-  .catch((err)=>{
-
-    console.log("--------------paso 8--CATCH", err)
-    db.desconectarDB(client)
-    .then(ok => {console.log('DB desconectada');received_updates.unshift({"Desconectado DB " : "OK"});})
-    .catch(no_ok => {console.log('Error desconecatndo BD', no_ok);received_updates.unshift({"Desconectado DB " : "Error"});});
-    res.sendStatus(200);
-
-  });
-   
-   
+    .then(json_final=>{
+          console.log("--------------paso 7")
+          console.log("Final: ",json_final)
+          return json_final;
+    })
+    .then(bd_desconctada => {
+      console.log("--PASO 8--TODO SALIÓ OK")
+      console.log('DB desconectada')
+      res.sendStatus(200);
+    })
+    .catch((err)=>{
+      console.log("--PASO 8- ALGO SALIÓ MAL-")
+      console.error(err)
+      res.sendStatus(200);
+    })
+    .finally(function(){
+      console.log("--------------paso 7.5--DESCONECTAR")
+      return db.desconectarDB(client)    
+    })
 });
-
-
-
-
 
 app.listen();
 

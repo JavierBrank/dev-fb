@@ -34,7 +34,7 @@ module.exports.desconectarDB = function(client){
   });
 }
 
-module.exports.insertarAdjunto = function(json, funcion_retorno, client){
+module.exports.insertarAdjunto = function(json, client){
   return new Promise((resolve, reject) => {
     if(json){ 
       sql_insertar_atachments = sqlstring.format("INSERT INTO "+config.tbface.attachments+"(id_interaccion, type, url) VALUES( ?, ?, ? )",
@@ -57,7 +57,7 @@ module.exports.insertarAdjunto = function(json, funcion_retorno, client){
   })
 }
 
-module.exports.consultarPage = function(json_id_page, funcion_retorno, client){
+module.exports.consultarPage = function(json_id_page, client){
   return new Promise((resolve, reject)=>{
     if(json_id_page){
       var sqlsqtring_consultar_page =  "SELECT id_page id, token_page token, habilitado enabled FROM "+config.tbface.page+" WHERE id_page=?"
@@ -152,7 +152,7 @@ module.exports.consultarUsuario = function(psid, funcion_existencia, client){
   });
 }
 
-module.exports.insertarUsuario= function(json, funcion_retorno, client){
+module.exports.insertarUsuario= function(json, client){
   return new Promise((resolve, reject)=> {
     if (json && client){
       var cod_persona=0;
@@ -167,7 +167,6 @@ module.exports.insertarUsuario= function(json, funcion_retorno, client){
         resolve(currval);
         })
       .catch(e => {
-        funcion_retorno({"Error: " : e.stack});
         console.log("Reject client.query(sql_consultar_usuario)")
         reject(e);
       })
@@ -176,59 +175,37 @@ module.exports.insertarUsuario= function(json, funcion_retorno, client){
     }
   });
 }
-module.exports.resetDB = function(client){
-  return new Promise((resolve, reject)=>{
-      client.query("DELETE FROM tbface_LOG; DELETE from tbface_attachment; delete from tbface_mensaje; delete from tbface_usuario")
-      .then(res=> {resolve()})
-      .catch(rej=>{reject(rej)})
-  })
-}
 
-module.exports.insertarMensaje = function(reqbody, funcion_retorno, client){
-  return new Promise((res, rej)=>{
-    ejecutarQuery(reqbody, funcion_retorno, client)
-    .then((id_interacion_msj)=>{
-      console.log("then resolve 1.0 -- MENSAJE INSERTADO EN LA BD");
-      res(id_interacion_msj)
-      })
-    .catch((mal)=>{
-      console.log("Reject ejecutarQuery(reqbody, funcion_retorno, client)", mal);
-      rej(mal)
-      });
-    function ejecutarQuery(dato, cargarlog, client){
-      return new Promise((resolve, reject)=>{
-       
-        var dates = convertirFecha(dato.timestamp);
-        if(dato.saliente == 'true')
-        { 
-          dato.timestamp = 1; //esto es porque la "fecha_time" cuando es saliente
-                              //se inicializa en 1 para indicar que el mensaje fue enviado
-                              //y se actualizará cuando venga el informe de entrega del webhook
-                              //en la funcion informeEntrega()
-          dato.leido=1;
-        }else {dato.leido=0;}
-        
-        console.log("------PASO 3.1---- POR INSERTAR JSON MENSAJE")
-        //dato.mid= sqlstring.escape("'"+ Math.floor(Math.random() * (100000 - 1)) + 1+dato.mid+"'");
-        var sql_insertar_mensaje = sqlstring.format("INSERT INTO "+config.tbface.mensaje+
-          " ( id_usuario, id_mensaje, fecha, fecha_time,saliente,mensaje,fecha_leido, fecha_alta"+
-          ",fecha_actualizacion,oprid,estado) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?); select currval('seq_interaccion');",
-          [dato.id_usuario,dato.mid,dates,dato.timestamp,dato.saliente,dato.text,dato.leido, 'now()', 'now()','1', '1']);
-        console.log(sql_insertar_mensaje)
-        client.query(sql_insertar_mensaje)
+module.exports.insertarMensaje = function(dato, client){
+  return new Promise((resolve, reject)=>{
+    var dates = convertirFecha(dato.timestamp);
+    if(dato.saliente == 'true')
+      {
+        /*esto es porque la "fecha_time" cuando es saliente se inicializa en 1
+        para indicar que el mensaje fue enviado y se actualizará 
+        cuando venga el informe de entrega del webhook en la funcion informeEntrega()*/
+        dato.timestamp = 1;
+        dato.leido=1;
+      }else{
+        dato.leido=0;
+      }
+      console.log("------PASO 3.1---- POR INSERTAR JSON MENSAJE")
+      //dato.mid= sqlstring.escape("'"+ Math.floor(Math.random() * (100000 - 1)) + 1+dato.mid+"'");
+      var sql_insertar_mensaje = sqlstring.format("INSERT INTO "+config.tbface.mensaje+
+        " ( id_usuario, id_mensaje, fecha, fecha_time,saliente,mensaje,fecha_leido, fecha_alta"+
+        ",fecha_actualizacion,oprid,estado) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?); select currval('seq_interaccion');",
+        [dato.id_usuario,dato.mid,dates,dato.timestamp,dato.saliente,dato.text,dato.leido, 'now()', 'now()','1', '1']);
+      console.log(sql_insertar_mensaje)
+      client.query(sql_insertar_mensaje)
         .then((id_interaccion) => {
-          cargarlog({" id_interaccion del msj " : id_interaccion})
           console.log({ "id_interaccion del msj " : id_interaccion[1].rows[0].currval})
           resolve(id_interaccion[1].rows[0].currval);
         })
         .catch((e) => {
-          console.log("Reject client.query(sql_insertar_mensaje) 2")
+          console.log("Reject insertarMensaje")
           reject(e.message)
         })
-
-      })
-    }
-  });  
+  })
 };
 module.exports.informeEntrega = function(json, client){
     return new Promise((resolve, reject) => {
