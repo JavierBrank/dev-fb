@@ -1,21 +1,23 @@
-CONFIGURACION
-=============
+
+Proyect FACEBOOK (Javi)
+=======================
+
 
 Instalacion
 -----------
 
 ```bash
-> npm i -S
-> npmm start
+> git clone https://gitlab.com/JavierBrank1/dev-fb.git
+> cd dev-fb/
 $
 ```
 
-#Proyect FACEBOOK (Javi)
-git clone https://gitlab.com/JavierBrank1/dev-fb.git
-cd dev-fb/
+```bash
+> npm i -S
+> npm start
+$
+```
 
-npm i -S 
-npm start
 Modificar port de module.exports
     riki => poner 5050
     javi => poner 5000
