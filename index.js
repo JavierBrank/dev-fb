@@ -24,8 +24,6 @@ app.get('/facebook', function(req, res) {
   }
 
 });
-
-
 app.post('/facebook', function(req, res) { 
   /*
   if (!req.isXHubValid()) {
@@ -58,9 +56,9 @@ app.post('/facebook', function(req, res) {
       console.log("--------finally");
       return db.desconectarDB(client);    
     })
-    .catch((err)=>{
+    .catch((error)=>{
       console.log("--PASO 8- ALGO SALIÓ MAL-");
-      console.error(err);
+      console.error(error.message);
       res.sendStatus(200);
     });
 });

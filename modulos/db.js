@@ -373,8 +373,6 @@ var convertirFecha = function(timestamp){
     }catch(error){
          throw error
     }
-   
- 
 }
   
 module.exports.buscarCorreo = function(texto){
@@ -385,6 +383,8 @@ module.exports.buscarCorreo = function(texto){
       var persona = {}
       //text.match()busca la expresion regular(mail) dentro del texto y devuelve un array
       var indice = texto.match(expr_reg)
+      var hola = 12 / 0;
+       console.log("hola:::",hola)
       if(indice){
         //en la posicion 0 del array se encuentra el mail
         persona.mail = indice[0]
@@ -432,8 +432,7 @@ module.exports.altaCabeceraPersona = function(persona, client){
         // en este caso una sola fila con un solo atributo "currval" como propiedad del objeto
         let cod_inscripto = re[1].rows[0].currval
         console.log("cod_inscripto=",cod_inscripto)
-        resolve(cod_inscripto)     
-        
+        resolve(cod_inscripto)
       })
       .catch(error=>{
         console.error("Error insertando cabecera persona")
@@ -460,14 +459,12 @@ module.exports.altaMailPersona = function(p,client){
         return (mail_insertado)
       })
       .then(actualizar_usuario=>{
-        if(p.con_cod_persona){return resolve(actualizar_usuario)} 
         console.log("actualizando user")
         var sql_actualizar_user=sqlstring.format("UPDATE "+config.tbface.usuario+
           " SET cod_persona=? WHERE ID_USUARIO = ?",[p.cod_inscripto, p.id_usuario])
         console.log("SQL ACTUALIZAR USER")
         console.log(sql_actualizar_user)
         //Se retorna la promesa_query a la siguiente promesa 
-
         return client.query(sql_actualizar_user)
       })
       .then(user_update=>{
@@ -477,7 +474,7 @@ module.exports.altaMailPersona = function(p,client){
       })
       .catch(error=>{
         //Si cualquiera de las querys salio mal cae aca
-        console.error("Error en la funcion altaMailPersona()", error_mail.message)
+        console.error("Error en la funcion altaMailPersona()", error.mensaje)
         reject(error)
       })
     }else{

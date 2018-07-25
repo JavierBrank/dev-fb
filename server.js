@@ -15,7 +15,6 @@ module.exports.indentificarJSON = function(json,client){
 
 		if (json.hasOwnProperty('object') && json.object == 'page')
 		{
-			
 			//si es un objeto de pagina
 			//Si existe la propiedad entry
 			if (json.hasOwnProperty('entry'))//##INICIO SI ENTRY --
@@ -153,7 +152,6 @@ module.exports.indentificarJSON = function(json,client){
 														res(false)
 													}else{
 														//USUARIO NO EXISTE EN TB PERSONA
-														persona.con_cod_persona = false
 														res(true)
 													}
 												}else{
@@ -176,6 +174,8 @@ module.exports.indentificarJSON = function(json,client){
 											//Traer nombre del usuario de facebook con la API GRAPH
 											return new Promise((res,rej)=>{
 												if(curl_nombre){
+													persona.mail =curl_nombre.mail
+													persona.nombre =curl_nombre.nombre
 													//si CURL_NOMBRE es true quiere decir que el usuario es un NN y se encontró un mail en el parseo
 													var url_user = 'https://graph.facebook.com/v3.0/'+json_final.psid_webhook_usuario
 													var data_user = {
@@ -191,7 +191,7 @@ module.exports.indentificarJSON = function(json,client){
 													      	persona.genero = ' '
 													  
 												  	if (error){
-													    console.error("ERORR!!!!!",error);
+													    console.error("ERORR CURL!!!!!",error);
 													    res(true)
 													  } else{
 													    json = JSON.parse(body)
@@ -225,8 +225,7 @@ module.exports.indentificarJSON = function(json,client){
 											//Si captura un true quiere decir que en la funcion anterior
 											//encontro un correo
 											if(alta_cabecera_persona){
-												persona.mail =alta_cabecera_persona.mail
-												persona.nombre =alta_cabecera_persona.nombre
+												
 												return db.altaCabeceraPersona(persona, client)
 											}else{
 												//sino le dice a la funcion que sigue que no hay nada para hacer
@@ -273,8 +272,8 @@ module.exports.indentificarJSON = function(json,client){
 					          	}
 					          	resolve(attach)
 							    	})
-					        	.catch(newerror => {
-			            	reject(newerror)
+					        	.catch(error => {
+			            		reject(error)
 		            		});							
 								/***********************INFORME DE LECTURA**********************/
 									break;
