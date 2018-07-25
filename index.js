@@ -1,18 +1,3 @@
-  /**
- * Copyright 2016-present, Facebook, Inc.
- * All rights reserved.
- //de.facebok
- //INDEX OPENSHIFT//INDEX OPENSHIFT
- //INDEX OPENSHIFT//INDEX OPENSHIFT
- //INDEX OPENSHIFT//INDEX OPENSHIFT
- //INDEX OPENSHIFT//INDEX OPENSHIFT
- //INDEX OPENSHIFT//INDEX OPENSHIFT
- //INDEX OPENSHIFT//INDEX OPENSHIFT
- //INDEX OPENSHIFT//INDEX OPENSHIFT
- * This source code is licensed under the license found in the
- * LICENSE file in the root directory of this source tree.
- */
-//INDEX OPENSHIFT
 var bodyParser                  = require('body-parser');
 var express                     = require('express');
 const config                    = require('./modulos/conf'); 
@@ -25,10 +10,7 @@ var db             = require('./modulos/db');
 var server         = require('./server');
 var logs           = [];
 var client;
-//var clave = fs.readFileSync('./.well-known/acme-challenge/zZGrLXIUwz4Jze2kGpAsUDW8FIlvn1A5xIiVy2DrSss','utf8')
-//const connectionString =  'postgres://admi.n:admin@10.30.0.231:5432/db_inscripcion';
-//const conString = 'postgres://waghcyct:VrnvqmW15dYT_403BOoGt8ckvUkWdljU@tantor.db.elephantsql.com:5432/waghcyct';
-//
+
 app.listen(port, () => {
   appinit = "Aplicacion DEV-FACEBOOK corriendo en puerto: "+ port;
   logs.unshift(appinit);
