@@ -1,11 +1,19 @@
+###################################################
+## Aplicacion: webhook facebook 
+## Fecha     : 23/07/2018
+## Autor     : Javier Escalona <gescal1@palermo.edu>
+##             Ricardo Zito <rzito@palermo.edu>
+###################################################
 
-Proyect FACEBOOK (Javi)
-=======================
 
 
 Instalacion
 -----------
-
+>Abrir puerto en iptables-config: -A INPUT -m state --state NEW -m tcp -p tcp --dport 5000 -j ACCEPT
+```bash
+> vim /etc/sysconfig/iptables-config 
+$
+```
 ```bash
 > git clone https://gitlab.com/JavierBrank1/dev-fb.git
 > cd dev-fb/
@@ -18,9 +26,7 @@ $
 $
 ```
 
->Modificar port de module.exports
-    riki => poner 5050
-    javi => poner 5000
+
 
 #Restart node
 killall node;npm start
