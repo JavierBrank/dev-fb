@@ -4,14 +4,14 @@ const request = require("request");
 
 
 module.exports.indentificarJSON = function(json,client){
-	return new Promise((respuesta, rechazo) => {
+	return new Promise((resolve, reject) => {
 		console.log("-----------PASO 1----IDENTIFICANDO JSON")
 		var json_final={};
 		var json_page = {};
-		var id_msj_insertado;
 		var data_log = {detalle : 'Init',
-							estado: 0};
+										estado: 0};
 		var persona = {};
+		var adjuntos = false;
 
 		if (json.hasOwnProperty('object') && json.object == 'page')
 		{
@@ -38,8 +38,8 @@ module.exports.indentificarJSON = function(json,client){
 								
 				                json_final.timestamp = messaging.timestamp;
 								switch(true){
+									/***********************INFORME DE ENTREGA**********************/
 									case messaging.hasOwnProperty('delivery'):
-									
 										//Si existe el atributo delivery quiere decir que es un informe de entrega
 										console.log("-----PASO 1.1 JSON IDENTIFICADO COMO INFORME DE ENTREGA");
 										/*j.watermark = watermark si existe sino = 0;
@@ -60,12 +60,12 @@ module.exports.indentificarJSON = function(json,client){
 													
 													if(indexmidn==(count_mids-1)){
 							                        		console.log("FIN: "+count_mids+" Mensaje(s) Actualizado(s)")
-							                        		respuesta(mids_ok);
+							                        		resolve(mids_ok);
 							                        	}
 												})
 												.catch(mids_error=>{
 													console.log("Error middds")
-													rechazo(mids_error)
+													reject(mids_error)
 												})
 														
 											})
@@ -81,7 +81,7 @@ module.exports.indentificarJSON = function(json,client){
 												db.informeEntrega(json_final,client)
 												.then(mids_ok=>{
 													console.log(mids_ok)
-							                        		respuesta(mids_ok);
+							                        		resolve(mids_ok);
 												})
 												.catch(mids_error=>{
 													console.log("Error middds",mids_error)
@@ -90,6 +90,7 @@ module.exports.indentificarJSON = function(json,client){
 														
 										}
 									break;
+									/***********************MENSAJE ENTRANTE O SALIENTE**********************/
 									case messaging.hasOwnProperty('message'):
 										db.guardarLog(json, client,'insert',data_log)
 										.then(log_ok =>{data_log.id_log = log_ok;console.log("Log insertado", log_ok)})
@@ -98,7 +99,7 @@ module.exports.indentificarJSON = function(json,client){
 										if(messaging.message.hasOwnProperty('text')){
 											json_final.text = messaging.message.text;
 										}else{
-											json_final.text = "'adjunto'";
+											json_final.text = null;
 										}
 										if(messaging.message.hasOwnProperty('attachments')){adjuntos=true;}
 										//si dentro de message existe la propiedad 'is_echo' quiere decir que es un mensaje saliente
@@ -114,9 +115,9 @@ module.exports.indentificarJSON = function(json,client){
 											json_final.saliente = 'false';
 											console.log("-----PASO 1.1 JSON IDENTIFICADO COMO MENSAJE ENTRANTE PSID",json_final.psid_webhook_usuario)
 										}
-
 										db.consultarUsuario(json_final.psid_webhook_usuario, client)
 										.then(user_exist => {
+											//consultar o insertar user
 											return new Promise((res, rej)=>{
 												if(user_exist){
 													//Si usuario existe ya sea con o sin codigo de persona 
@@ -132,6 +133,7 @@ module.exports.indentificarJSON = function(json,client){
 														console.log('Me traigo el currval: ', currval_user);
 														json_final.id_usuario=currval_user.currval;
 														persona.id_usuario=currval_user.currval;
+														persona.cod_persona=0;
 														res(0);
 													})
 													.catch(error => {
@@ -141,45 +143,40 @@ module.exports.indentificarJSON = function(json,client){
 												}
 											})
 										})
-										.then(cod_persona=>{
+										.then(person=>{
+											//Verifica si existe en tb_persona
 											return new Promise((res, rej)=>{
 												if(json_final.saliente == 'false'){
-													if(!cod_persona.mail && cod_persona.cod_persona!=0){
-														//Si el objeto cod_persona NO tiene atributo mail y 
-														//el atributo cod_persona es distinto de 0
-													persona.cod_inscripto=cod_persona.cod_persona
-													//Existe en tb_persona sin mail
-													console.log("El usuario existe en tb_persona sin mail")
-													//establecemos el atributo con_cod_persona en true del objeto persona
-													//para usarlo mas adelante
-													persona.con_cod_persona = true
-													//y le decimos a la funcion siguiente, que busca el nombre de facebook, que no lo haga
-													res(false)
-
-													}else if(cod_persona.mail && cod_persona.cod_persona!=0){
-														console.log("El usuarioexiste en tb_persona con mail")
-														//SI existe en tb_persona con mail no se parsea el texto
-														persona.cod_inscripto=cod_persona.cod_persona
-														persona.con_cod_persona = false
+													if(person.cod_persona!=0){
+														//EXISTE EN TB_PERSONA
+														persona.cod_inscripto=person.cod_persona
 														res(false)
-													}
-													else{
-														console.log("El usuario es un NN")
+													}else{
+														//USUARIO NO EXISTE EN TB PERSONA
 														persona.con_cod_persona = false
-														//Le decimos a la funcion que trae el nombre de facebook que lo haga
 														res(true)
 													}
 												}else{
-													//Si es un mensaje saliente se ignora
+													//Si es un mensaje saliente se ignora y no se parse el texto
 													res(false)
 												}
 												
 											})
 										})
+										.then(buscar_correo=>{
+											//Busca mail en el texto si no existe en tb_persona
+											if(buscar_correo){
+												return db.buscarCorreo(json_final.text)
+												//Si no encontró un correo le dice a la funcion que sigue que no hay nada
+											}else{
+												return false;
+											}
+										})
 										.then(curl_nombre=>{
+											//Traer nombre del usuario de facebook con la API GRAPH
 											return new Promise((res,rej)=>{
 												if(curl_nombre){
-													//si CURL_NOMBRE es true quiere decir que el usuario es un NN
+													//si CURL_NOMBRE es true quiere decir que el usuario es un NN y se encontró un mail en el parseo
 													var url_user = 'https://graph.facebook.com/v3.0/'+json_final.psid_webhook_usuario
 													var data_user = {
 												 	method: 'GET',
@@ -215,24 +212,14 @@ module.exports.indentificarJSON = function(json,client){
 													  }  
 													});
 												}else{
-													//si curl_nombre es false es porque ya existe en tb_persona
-													//por ende no hay que buscar correo
+													/*si curl_nombre es false es porque: 
+														1. ya existe en tb_persona 
+														2. es un msj saliente
+														3. No encontró mail en el parseo*/
 													res(false)
 												}
 												
 											})
-										})
-										.then(buscar_correo=>{
-											console.log("BUSCAR_CORREO:"+typeof(buscar_correo)+" concod:"+typeof(persona.con_cod_persona))
-											if(buscar_correo || persona.con_cod_persona){
-												//Si buscar_correo es true O la persona tiene cod_persona pero no mail
-													console.log("DENTROOOOOOOOOOOOOO")
-												return db.buscarCorreo(json_final.text)
-											//Si no encontró un correo le dice a la funcion que sigue que no hay nada
-											}else{
-
-												return false;
-											}
 										})
 										.then(alta_cabecera_persona=>{
 											//Si captura un true quiere decir que en la funcion anterior
@@ -242,13 +229,13 @@ module.exports.indentificarJSON = function(json,client){
 												persona.nombre =alta_cabecera_persona.nombre
 												return db.altaCabeceraPersona(persona, client)
 											}else{
-												console.log("alta_cabecera_persona false else")
 												//sino le dice a la funcion que sigue que no hay nada para hacer
 												return false
 											}
 											
 										})
 										.then(cod_inscripto=>{
+											//Alta mail persona en tb_mail_all
 											//Si se obtiene true o algun valor quiere decir que la cabecera fue insertada
 											if(cod_inscripto){
 												console.log("typeof(cod_inscripto)=='number'")
@@ -258,7 +245,6 @@ module.exports.indentificarJSON = function(json,client){
 												//Insertado el mail y actualizado el USER
 												return db.altaMailPersona(persona, client)
 											}else{
-												console.log("typeof(cod_inscripto)=='false'")
 												//Sino quiere decir que sigue el camino del false de las funciones anteriores
 												//y continua el proceso normalmente a insertar msj
 												return false
@@ -266,65 +252,31 @@ module.exports.indentificarJSON = function(json,client){
 											}
 										})
 										.then(insert_msj => {
-											db.insertarMensaje(json_final,client)
-											.then(insertar_log=>{
-												id_msj_insertado = insertar_log;
-												data_log.estado=1;
-												data_log.detalle ='mensaje insertado';
-						                      	return db.guardarLog(json,client,'update',data_log)
-						                      	.then(ok_log => {console.log("UPDATE LOG OK :",ok_log)})
-						                      	.catch(error_log => {console.log(error_log)})
-							                    console.log("mensaje instertado en la base");
-											})
-											.then((currval) => {
-												
-							                    if(adjuntos){
-							                       	console.log('atachments true');
-							                       	json_final.id_interaccion = id_msj_insertado; 
-							                    	var count_attachs = messaging.message.attachments.length;
-													// expected output: 4
-													messaging.message.attachments.forEach((attach0, index_attach, array_attach)=>{
-
-							                        json_final.attachments_type = attach0.type
-							                        json_final.attachments_payload_url= attach0.payload.url;
-							                        db.insertarAdjunto(json_final,  client)
-							                        .then(attach => {
-							                        	console.log("atachments "+index_attach+"  Insertado")
-							                        	if(index_attach==(count_attachs-1)){
-							                        		respuesta(attach);
-							                        		console.log("FIN: "+count_attachs+" atachments  Insertados")
-							                        	}
-							                        })
-							                        .catch(no_atach => {
-							                        	console.log("Error insertando attachmetns2222222222", no_atach)
-							                        	rechazo(no_atach)
-							                        })
-
-							                		})
-							                        	
-							                        }else{
-							                        	respuesta(currval);
-							                        }
-
-						                    })
-						                    .catch((bad)=> {
-													console.log("Reject db.insertarJSON")
-							                        rechazo(bad)
-							                     });
-						                    })
-							            .catch(user_noexis => {
-							            	rechazo(user_noexis)
-							            	});
-							            if(messaging.message.hasOwnProperty('attachments'))
-											{
-												messaging.message.attachments.forEach(function(attachments, index, array_atachments){
-												attachments_type = attachments.type;
-												attachments_payload_url = attachments.payload.url;
-
-											});
-										}
-									
-								
+											//Insertar MSJ
+											return db.insertarMensaje(json_final,client)
+										})
+										.then(id_interaccion => {
+											//Insertar agjuntos
+											if(adjuntos){
+												console.log('atachments true');
+							          return db.insertarAdjuntos(messaging.message.attachments, client, id_interaccion)
+						          }else{
+							          return false;
+						          }
+					          })
+					          .then(attach => {
+					          	//Terminar Proceso
+					          	if(attach){
+					          		console.log("Proceso terminado: "+attach+" adjuntos insertados")
+					          	}else{
+					          		console.log("Proceso terminado")
+					          	}
+					          	resolve(attach)
+							    	})
+					        	.catch(newerror => {
+			            	reject(newerror)
+		            		});							
+								/***********************INFORME DE LECTURA**********************/
 									break;
 									case messaging.hasOwnProperty('read'):
 										console.log("-----PASO 1.1 JSON IDENTIFICADO COMO INFORME DE LECTURA")
@@ -334,16 +286,16 @@ module.exports.indentificarJSON = function(json,client){
 										db.informeLectura(json_final,client)
 										.then(msj=>{
 											console.log(msj)
-											respuesta(msj)
+											resolve(msj)
 										}) 
 										.catch(err=>{
 											console.log(err)
-											rechazo(err)
+											reject(err)
 										})	
 									break;
 									default:
 										console.log("entro en default")
-										respuesta('No se reconoce el tipo de messaging - ')
+										resolve('No se reconoce el tipo de messaging - ')
 								}
 								
 								
@@ -356,7 +308,7 @@ module.exports.indentificarJSON = function(json,client){
 					}else{
 						//CAE AQUI SI LA PAGINA NO EXISTE EN LA BD
 						
-						rechazo({"PAGE":"Inhabilitada o inexistente"},'abortar');
+						reject({"PAGE":"Inhabilitada o inexistente"},'abortar');
 					}
 
 					
@@ -365,21 +317,21 @@ module.exports.indentificarJSON = function(json,client){
 					console.log(page_error		)
 					//CAE AQUI SI LA PAGINA NO EXISTE EN LA BD
 				
-					rechazo({"PAGE":" CONSULTAR EXISTENCIA ERROR"},'abortar');
+					reject({"PAGE":" CONSULTAR EXISTENCIA ERROR"},'abortar');
 
 				})
 			
 			}else{
 				//si no existe la propiedad entry
 				
-				rechazo({"NO es":" un mensaje"},'abortar');
+				reject({"NO es":" un mensaje"},'abortar');
 
 			}////Cierre if(entry exist)##FIN SI ENTRY --
 		}else
 		{	
 				console.log("-----------PASO 1----ERROR IDENTIFICANDO JSON")
 				
-					rechazo({"NO es":" un mensaje"},'abortar');
+					reject({"NO es":" un mensaje"},'abortar');
 
 		} //Cierre if(object=='page')
 			

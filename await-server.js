@@ -21,7 +21,7 @@ indentificarJSON = async function(json, funcion_retorno,client){
 				{
 					json_final.id_page=json.entry[0].id;
 					json_final.time=json.entry[0].time;
-					var page_ok = await db.consultar_page(json_final.id_page, funcion_retorno, client)
+					var page_ok = await db.consultarPage(json_final.id_page, funcion_retorno, client)
 					console.log(page_ok)
 				
 				}else{
@@ -34,7 +34,7 @@ indentificarJSON = async function(json, funcion_retorno,client){
 			{	
 					console.log("-----------PASO 1----ERROR IDENTIFICANDO JSON")
 					
-						console.log({"NO es":" page"},'abortar');
+					console.log({"NO es":" page"},'abortar');
 
 			} //Cierre if(object=='page')
 				
@@ -52,4 +52,10 @@ var json = {"object": "page",
 				"time": "155123513115"
 				}]
 		}
-indentificarJSON(json);
+
+async function procesar(){
+	await db.conectarDB();
+	await indentificarJSON(json);
+	await 
+
+}

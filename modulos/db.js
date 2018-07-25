@@ -34,21 +34,25 @@ module.exports.desconectarDB = function(client){
   });
 }
 
-module.exports.insertarAdjunto = function(json, client){
+module.exports.insertarAdjuntos = function(array_adjuntos, client, id_interaccion){
   return new Promise((resolve, reject) => {
-    if(json){ 
-      sql_insertar_atachments = sqlstring.format("INSERT INTO "+config.tbface.attachments+"(id_interaccion, type, url) VALUES( ?, ?, ? )",
-      [json.id_interaccion,json.attachments_type,json.attachments_payload_url]);
-      //console.log(sql_insertar_atachments)
-      client.query(sql_insertar_atachments)
-      .then(attachments_ok => {
-        resolve(attachments_ok)
-      })  
-      .catch(attachments_no_ok => {
-        console.log("error atachment 111111111111111111")
-        reject(attachments_no_ok)
+    if(array_adjuntos){
+      var cantidad_adjuntos = array_adjuntos.length;
+      array_adjuntos.forEach((attach0, index_attach, array_attach)=>{
+        sql_insertar_atachments = sqlstring.format("INSERT INTO "+config.tbface.attachments+"(id_interaccion, type, url) VALUES( ?, ?, ? )",
+        [id_interaccion,attach0.type,attach0.payload_url]);
+        //console.log(sql_insertar_atachments)
+        client.query(sql_insertar_atachments)
+        .then(attachments_ok => {
+          if(index_attach==cantidad_adjuntos-1){
+            resolve(cantidad_adjuntos)
+          }
+        })
+        .catch(error => {
+          console.log("Error insertando attachment")
+          reject(error)
+        })
       })
-
     }else{
       erroratach = "JOSN insertarATTACHMENTS vacio";
       console.log(erroratch)
@@ -73,80 +77,44 @@ module.exports.consultarPage = function(json_id_page, client){
           resolve(false)
         }
       })
-      .catch(page_error => {
+      .catch(error => {
         console.log(page_error);
-        reject(page_error)
+        reject(error)
       })
     }
   })
 }
 //   recibo como parametros: psid = el psid de usuario que viene de la funcion recorrer JSON
 //                      funcion_existencia 
-module.exports.consultarUsuario = function(psid, funcion_existencia, client){
+module.exports.consultarUsuario = function(psid, client){
   return new Promise((resolve , reject) => {
     if(psid){
       var persona = {};
-      funcion_existencia({"Dentro de funcion consultar_usuario()" : "OK"});
-      sql_consultar_usuario = sqlstring.format("SELECT id_usuario id, cod_persona persona FROM "+config.tbface.usuario
+      sql_consultar_usuario = sqlstring.format("SELECT id_usuario id, cod_persona FROM "+config.tbface.usuario
                                               +" WHERE psid_webhook_usuario = ?",[psid]);
-      funcion_existencia({" Query para insertar" : sql_consultar_usuario});
       client.query(sql_consultar_usuario)
       .then(result => {
         console.log("------------PASO 2.1---")
         console.log(sql_consultar_usuario)
         if(result.rows[0]){
-          //Si el usuario existe en la base de datos de chat-facebook pregunto si tiene cod_persona dsitinto de 0
-          funcion_existencia({"Resultado: " : result.rows[0]}, 'EXISTE');
+          //Si existe rows[0] quiere decir que el usuario existe
           persona.id = result.rows[0].id;
-          persona.cod_persona = result.rows[0].persona;
-          persona.mail = false;
+          persona.cod_persona = result.rows[0].cod_persona;
           console.log("------------PASO 2.2--EXISTE USUARIO EN tbface_usuario");
-          //resolve(result.rows[0])
-          if(result.rows[0].persona!=0){
-            console.log("Tiene codigo de persona: ", persona.cod_persona)
-            //si tiene cod_persona distinto de cero me fijo si tiene mail
-            var sql_consultar_mail= sqlstring.format(
-                                    "SELECT DISTINCT m.mail correo FROM tb_mail_all m "+
-                                    "INNER JOIN tb_persona p "+
-                                    "ON p.cod_inscripto = m.cod_inscripto "+
-                                    "AND p.cod_inscripto= ?",[result.rows[0].persona])
-            console.log("SQL_CONSULAR_MAIL",sql_consultar_mail)
-            client.query(sql_consultar_mail)
-            .then(mail_ok=>{
-              if(mail_ok.rows[0]){
-                console.log("Tiene mail: ",mail_ok.rows[0].correo)
-                persona.mail = mail_ok.rows[0].correo
-                //devuelvo persona con mail
-                resolve(persona)
-              }else{
-                console.error("No tiene mail")
-                resolve(persona)
-              }
-              
-            })
-            .catch(mail_error=>{
-              console.log(mail_error)
-              reject(mail_error)
-            })
-          }else{
-            //Devuelvo usuario con codigo persona = 0
-            resolve(persona)
-          }
-          
+          resolve(persona)
           }else{
             console.log("------------PASO 2.2--NO EXISTE USUARIO");
             resolve(false);
         }
                                   
         })
-      .catch(e => {
-        funcion_existencia({"Error: " : e.stack});
-        console.log("Reject client.query(sql_consultar_usuario)")
-        rej(e);
-        })
-      }else{
-        console.log("else(sql_consultar_usuario)")
-        rej()
+      .catch(error => {
+        console.log("Error consultando usuario")
+        reject(error);
+      })
+    }else{
+        console.log("Falta PSID:"+psid+" para consltar usuario")
+        reject(false)
     }
 
   });
@@ -166,9 +134,9 @@ module.exports.insertarUsuario= function(json, client){
         //console.log("Currval is: 0000000000000000000000000000000",result[1].rows[0]);
         resolve(currval);
         })
-      .catch(e => {
+      .catch(error => {
         console.log("Reject client.query(sql_consultar_usuario)")
-        reject(e);
+        reject(error);
       })
       }else{
         reject("JSON Vacio");
@@ -201,9 +169,9 @@ module.exports.insertarMensaje = function(dato, client){
           console.log({ "id_interaccion del msj " : id_interaccion[1].rows[0].currval})
           resolve(id_interaccion[1].rows[0].currval);
         })
-        .catch((e) => {
+        .catch((error) => {
           console.log("Reject insertarMensaje")
-          reject(e.message)
+          reject(error)
         })
   })
 };
@@ -222,9 +190,9 @@ module.exports.informeEntrega = function(json, client){
           console.log("UPDATE MENSAJE DELIVERY")
           resolve(act)
         }))
-        .catch(err_act => {
+        .catch(error => {
           console.log("ERROR: UPDATE MENSAJE DELIVERY")
-          reject(err_act)
+          reject(error)
         })
         
       }else if(json.midausente){
@@ -239,20 +207,20 @@ module.exports.informeEntrega = function(json, client){
         //query para traer el ID_USUARIO
         client.query(sql_traer_id)
         .then(objeto_resultado=>{
-          //Aca estoy recibiendo un objeto en "objeto_resultado" con los valores de la respuesta de la query
-          //A ese objeto le extraigo el valor id_usuario accediendo a la propiedad rows la cual es un array con un objeto dentro
-          //objeto_resultado.rows[{ id : '29' }]
+          /*Aca estoy recibiendo un objeto en "objeto_resultado" con los valores de la respuesta de la query
+          A ese objeto le extraigo el valor id_usuario accediendo a la propiedad rows la cual es un array con un objeto dentro
+          objeto_resultado.rows[{ id : '29' }]*/
           if(objeto_resultado.rows!=[]){
-            //cuando fecha_time está en valor 1 quiere decir que aun no fue entregado
+            /*cuando fecha_time está en valor 1 quiere decir que aun no fue entregado*/
             var sql_informe_entrega=sqlstring.format(
               "UPDATE "+config.tbface.mensaje+" "+
               "SET fecha_time = ?, fecha_actualizacion= now() "+
               "WHERE id_usuario=? and fecha <= ? and fecha_time=1"
             ,[json.watermark,objeto_resultado.rows[0].id, dates])
             console.log(sql_informe_entrega)
-            //retorno la promesa client.query() y espero la respuesta del update 
-            //en el siguiente .then() en caso de ser positiva
-            //sino caera en el .catch
+            /*retorno la promesa client.query() y espero la respuesta del update 
+            en el siguiente .then() en caso de ser positiva
+            sino caera en el .catch*/
             return client.query(sql_informe_entrega)
           }else{
             //si no hay resultados solo retorno en objeto con el id usuario a la siguiente promesa
@@ -272,13 +240,10 @@ module.exports.informeEntrega = function(json, client){
           resolve()
           
         })
-        .catch(err_act => {
+        .catch(error => {
           console.log("ERROR: UPDATE MENSAJE DELIVERY")
-          reject(err_act)
+          reject(error)
         })
-        
-        
-           
       }else
       {
         reject("Faltan datos para actualizar msj de entrega");
@@ -324,9 +289,9 @@ module.exports.informeLectura = async function(json, client){
         console.log("res final::",resultado_final)
         resolve();
       })
-      .catch(err_act => {
+      .catch(error => {
         console.log("ERROR: UPDATE MENSAJE READ")
-        reject(err_act)
+        reject(error)
       })
   }else
   {
@@ -362,13 +327,17 @@ module.exports.guardarLog = function(json, client, accion, data){
       
         return reject("Debe especificarse una accion")
     }
-    client.query(sql_log).then(id_log=>{
+    client.query(sql_log)
+    .then(id_log=>{
       if(accion == 'insert'){
         resolve(id_log[1].rows[0].currval)
       }else{
         resolve(id_log)
       }
-    }).catch(err_log=>{reject(err_log)})
+    })
+    .catch(error=>{
+      reject(error)
+    })
     
   });
 };
@@ -506,10 +475,10 @@ module.exports.altaMailPersona = function(p,client){
         console.log(user_update.rowCount+" Usuario actualizado --- ID:"+p.id_usuario+" COD_PERSONA: "+p.cod_inscripto)
         resolve(user_update)
       })
-      .catch(error_mail=>{
+      .catch(error=>{
         //Si cualquiera de las querys salio mal cae aca
         console.error("Error en la funcion altaMailPersona()", error_mail.message)
-        reject(error_mail)
+        reject(error)
       })
     }else{
       reject("Falta el objeto persona para insertar mail")
