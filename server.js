@@ -27,6 +27,9 @@ module.exports.indentificarJSON = function(json,client){
 				json_final.time=json.entry[0].time;
 				db.consultarPage(json_final.id_page, client)
 				.then(page_ok=>{
+					db.guardarLog(json, client,'insert',data_log)
+										.then(log_ok =>{data_log.id = log_ok;console.log("Log insertado", log_ok)})
+									 	.catch(log_nook=>{console.log("Log no insertado", log_nook)})
 					if(page_ok.enabled){
 						json_page.id = page_ok.id
 						json_page.token = page_ok.token
@@ -100,9 +103,7 @@ module.exports.indentificarJSON = function(json,client){
 									break;
 									/***********************MENSAJE ENTRANTE O SALIENTE**********************/
 									case messaging.hasOwnProperty('message'):
-										db.guardarLog(json, client,'insert',data_log)
-										.then(log_ok =>{data_log.id = log_ok;console.log("Log insertado", log_ok)})
-									 	.catch(log_nook=>{console.log("Log no insertado", log_nook)})
+										
 										json_final.mid = messaging.message.mid;
 										if(messaging.message.hasOwnProperty('text')){
 											json_final.text = messaging.message.text;
