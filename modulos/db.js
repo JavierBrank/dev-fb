@@ -63,7 +63,7 @@ module.exports.insertarAdjuntos = function(array_adjuntos, client, id_interaccio
 module.exports.consultarPage = function(json_id_page, client){
   return new Promise((resolve, reject)=>{
     if(json_id_page){
-      var sqlsqtring_consultar_page =  "SELECT id_page id, token_page token, habilitado enabled FROM "+config.tbface.page+" WHERE id_page=?"
+      var sqlsqtring_consultar_page =  "SELECT id_page id, token_page token, habilitados enabled FROM "+config.tbface.page+" WHERE id_page=?"
       sql_consultar_page=sqlstring.format(sqlsqtring_consultar_page, [json_id_page]);
       console.log(sql_consultar_page);
       client.query(sql_consultar_page)
@@ -77,7 +77,7 @@ module.exports.consultarPage = function(json_id_page, client){
         }
       })
       .catch(error => {
-        console.log(page_error);
+        console.log(error);
         reject(error)
       })
     }
