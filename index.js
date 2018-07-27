@@ -52,15 +52,18 @@ app.post('/facebook', function(req, res) {
     })
     .then(bd_desconctada => {
       console.log("--PASO 8--TODO SALIÓ OK");
+      console.log("--------finally");
+      db.desconectarDB(client); 
       res.sendStatus(200);
     })
     .finally(function(){
-      console.log("--------finally");
-      return db.desconectarDB(client);    
+         
     })
     .catch((error)=>{
       console.log("--PASO 8- ALGO SALIÓ MAL-");
       console.error(error);
+      console.log("--------finally");
+      db.desconectarDB(client); 
       res.sendStatus(200);
     });
 });
