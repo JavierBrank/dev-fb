@@ -37,13 +37,16 @@ app.post('/facebook', function(req, res) {
     return;
   }
   */
+  var key = ["client"+Math.floor((Math.random() * 1000) + 1)];
+  
+  console.log(con.nombre_conexion)
   db.conectarDB()
     .then(conexion => { 
-      client = conexion;
+      var con  = { key : conexion};
       return req.body;
     })
     .then(json => {
-      return server.indentificarJSON(json, client);
+      return server.indentificarJSON(json, con.key);
     })
     .then(json_final=>{
           console.log("--------------paso 7");
@@ -53,14 +56,14 @@ app.post('/facebook', function(req, res) {
     .then(bd_desconctada => {
       console.log("--PASO 8--TODO SALIÓ OK");
       console.log("--------finally");
-      db.desconectarDB(client); 
+      db.desconectarDB(con.key); 
       res.sendStatus(200);
     })
     .catch((error)=>{
       console.log("--PASO 8- ALGO SALIÓ MAL-");
       console.error(error);
       console.log("--------finally");
-      db.desconectarDB(client); 
+      db.desconectarDB(con.key); 
       res.sendStatus(401);
     });
 });
