@@ -61,7 +61,7 @@ app.post('/facebook', function(req, res) {
       console.error(error);
       console.log("--------finally");
       db.desconectarDB(client); 
-      res.sendStatus(200);
+      res.sendStatus(401);
     });
 });
 
