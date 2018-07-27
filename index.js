@@ -38,11 +38,12 @@ app.post('/facebook', function(req, res) {
   }
   */
   var key = ["client"+Math.floor((Math.random() * 1000) + 1)];
+  var con ={};
   
   console.log(con.nombre_conexion)
   db.conectarDB()
     .then(conexion => { 
-      var con  = { key : conexion};
+      con  = { key : conexion};
       return req.body;
     })
     .then(json => {
