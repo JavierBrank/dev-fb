@@ -56,9 +56,6 @@ app.post('/facebook', function(req, res) {
       db.desconectarDB(client); 
       res.sendStatus(200);
     })
-    .finally(function(){
-         
-    })
     .catch((error)=>{
       console.log("--PASO 8- ALGO SALIÓ MAL-");
       console.error(error);
