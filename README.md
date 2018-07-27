@@ -39,14 +39,16 @@ $
 ```
 
 
-##Tener en cuenta antes de pasar a producción
+Tener en cuenta antes de pasar a producción
+--------------------------------------------
 
 ```bash
 > cd dev-fb/
 $
 ```
 
-##Modificar server.js
+Modificar server.js
+-------------------
 
 ```bash
 >  vim server.js
@@ -55,7 +57,9 @@ $
 >Borrar los console.log  que son de debug
 >Borrar el array Received_updates = []; en todos lados
 
-##Modificar index.js
+Modificar index.js
+-------------------
+
  vim index.js
  *Descomentar la validacion if (!req.isXHubValid()) {..}
  *Borrar el array Received_updates = []; en todos lados 
