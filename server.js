@@ -67,7 +67,7 @@ module.exports.indentificarJSON = function(json,client){
 																					? "No hay mensajes para actualizar"
 																					: count_mids+" Mensaje(s) Actualizado(s)"
 							                        		console.log(mensaje)
-							                        		data_log.detalle=JSON.stringify(result)
+							                        		data_log.detalle=JSON.stringify(result)+mensaje;
 							                        		resolve(data_log);
 							                        	}
 												})
@@ -90,7 +90,7 @@ module.exports.indentificarJSON = function(json,client){
 												db.informeEntrega(json_final,client)
 												.then(mids_ok=>{
 													console.log(mids_ok)
-													data_log.detalle=JSON.stringify(mids_ok)
+													data_log.detalle=JSON.stringify(mids_ok)+" Informe de entrega OK"
 							                        		resolve(data_log);
 												})
 												.catch(mids_error=>{
@@ -276,12 +276,10 @@ module.exports.indentificarJSON = function(json,client){
 					          })
 					          .then(attach => {
 					          	//Terminar Proceso
-					          	if(attach){
-					          		console.log("Proceso terminado: "+attach+" adjuntos insertados")
-					          	}else{
-					          		console.log("Proceso terminado")
-					          	}
-					          	data_log.detalle=JSON.stringify(attach)
+					          	var saliente = (json_final.saliente=='true') ? "saliente" : "entrante"
+					          	var msj = (attach) ? "Proceso terminado: "+attach+" adjuntos insertados" : "Mensaje "+saliente+" insertado en BD"
+					          	console.log(msj)
+					          	data_log.detalle=JSON.stringify(attach)+msj;
 					          	resolve(data_log)
 							    	})
 					        	.catch(error => {
