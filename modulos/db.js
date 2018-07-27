@@ -33,15 +33,14 @@ module.exports.desconectarDB = function(client){
     });
   });
 }
-
 module.exports.insertarAdjuntos = function(array_adjuntos, client, id_interaccion){
   return new Promise((resolve, reject) => {
     if(array_adjuntos){
       var cantidad_adjuntos = array_adjuntos.length;
       array_adjuntos.forEach((attach0, index_attach, array_attach)=>{
         sql_insertar_atachments = sqlstring.format("INSERT INTO "+config.tbface.attachments+"(id_interaccion, type, url) VALUES( ?, ?, ? )",
-        [id_interaccion,attach0.type,attach0.payload_url]);
-        //console.log(sql_insertar_atachments)
+        [id_interaccion,attach0.type,attach0.payload.url]);
+        console.log("SQL ATTACHMENT>>",sql_insertar_atachments)
         client.query(sql_insertar_atachments)
         .then(attachments_ok => {
           if(index_attach==cantidad_adjuntos-1){
@@ -266,7 +265,7 @@ module.exports.informeLectura = async function(json, client){
           if(id_usuario.rows[0]){
             res(id_usuario.rows[0].id)
           }else{
-            rej(id_usuario)
+            rej("Usuario no existe en BD")
           }
         })
         
@@ -376,27 +375,38 @@ var convertirFecha = function(timestamp){
 }
   
 module.exports.buscarCorreo = function(texto){
-  return new Promise((resolve, reject)=>{
-   
+  return new Promise((resolve, reject)=>{ 
     if(texto){
-      var expr_reg =/[a-z\d._%+-]+@[a-z\d.-]+\.[a-z]{2,4}\b/i
+      //var expr_reg =/[a-z\d._%+-]+@[a-z\d.-]+\.[a-z]{2,4}\b/
+      var reg = /(([a-zA-Z0-9_\-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})|([a-zA-Z0-9\-\.]+))\.([a-zA-Z]{2,4}|[0-9]{1,3})(\]?))/
+      var valida_mail = /^([\w\!\#$\%\&\'\*\+\-\/\=\?\^\`{\|\}\~]+\.)*[\w\!\#$\%\&\'\*\+\-\/\=\?\^\`{\|\}\~]+@((((([a-z0-9]{1}[a-z0-9\-]{0,62}[a-z0-9]{1})|[a-z])\.)+[a-z]{2,6})|(\d{1,3}\.){3}\d{1,3}(\:\d{1,5})?)$/i
       var persona = {}
       //text.match()busca la expresion regular(mail) dentro del texto y devuelve un array
-      var indice = texto.match(expr_reg)
-      var hola = 12 / 0;
-       console.log("hola:::",hola)
+      var indice = texto.match(reg)
       if(indice){
+        var mail = indice[0]
+        console.log("MAIL: se encontró: ",mail)
         //en la posicion 0 del array se encuentra el mail
-        persona.mail = indice[0]
-        //split() devuelve un array en la posicion[0] esta lo que está a la izquierda del @ 
-        // en la posicion 1 el dominio del mail
-        persona.nombre = indice[0].split('@')[0]+'@'
-        console.log("Nombre es: "+persona.nombre+" Mail: "+persona.mail)
-         resolve(persona)
+        if(mail.match(valida_mail)){
+          //Valido mail
+          if(mail.match(/\@palermo\./)){
+            //valido que no sea de @palermo
+            resolve(false)
+          }else
+          {
+            persona.mail = mail
+            //split() devuelve un array en la posicion[0] esta lo que está a la izquierda del @ 
+            // en la posicion 1 el dominio del mail
+            persona.nombre = mail.split('@')[0]+'@'
+            console.log("Nombre es: "+persona.nombre+" Mail: "+persona.mail)
+            resolve(persona)
+          }
+        }else{
+          resolve(false)
+        }
       }else{
-        console.log("No se ha encontrado ninguna coincidencia",indice)
-        //se retonra false para que la funcion que obtiene este valor no continue el proceso
-        return resolve(false)
+        console.log("MAIL: No se ha encontrado ninguna coincidencia")
+        resolve(false)
       }
      
     }else{

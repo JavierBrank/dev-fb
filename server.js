@@ -34,8 +34,7 @@ module.exports.indentificarJSON = function(json,client){
 						{//##INICIO SI MESSAGING -- Si el objeto tiene la propiedad messaging 
 							//recorro el array messaging[index] como messaging 
 							entry.messaging.forEach(function(messaging, i , array_messaging){
-								
-				                json_final.timestamp = messaging.timestamp;
+				        json_final.timestamp = messaging.timestamp;
 								switch(true){
 									/***********************INFORME DE ENTREGA**********************/
 									case messaging.hasOwnProperty('delivery'):
@@ -47,7 +46,6 @@ module.exports.indentificarJSON = function(json,client){
 											los almaceno en un hash junto con el watermark(fecha de entrega en bigint)
 											y el contador es para que salga de la promesa una vez que haya recorrido todo el arreglo mids
 										*/
-
 										json_final.watermark = messaging.delivery.hasOwnProperty('watermark') ? messaging.delivery.watermark : 0;
 										if(messaging.delivery.hasOwnProperty('mids')){
 											var count_mids=messaging.delivery.mids.length;
@@ -56,7 +54,6 @@ module.exports.indentificarJSON = function(json,client){
 												json_final.mid=midn
 												db.informeEntrega(json_final,client)
 												.then(mids_ok=>{
-													
 													if(indexmidn==(count_mids-1)){
 							                        		console.log("FIN: "+count_mids+" Mensaje(s) Actualizado(s)")
 							                        		resolve(mids_ok);
