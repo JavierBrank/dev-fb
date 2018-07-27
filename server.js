@@ -296,7 +296,7 @@ module.exports.indentificarJSON = function(json,client){
 										db.informeLectura(json_final,client)
 										.then(msj=>{
 											console.log(msj)
-											data_log.detalle= JSON.stringify(msj)
+											data_log.detalle= msj
 											resolve(data_log)
 										}) 
 										.catch(err=>{

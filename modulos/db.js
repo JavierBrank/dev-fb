@@ -280,9 +280,8 @@ module.exports.informeLectura = async function(json, client){
 
       })
       .then(resultado_final=>{
-        var msj = (resultado_final.rowCount!=0) ? "I. Lectura: "+resultado_final.rowCount+" Mensaje(s) atcualizado(s)" : "I.Lectura: No hay mensajes que actualizar"
+        var msj = (resultado_final.rowCount!=0) ? "I. Lectura: "+resultado_final.rowCount+" Mensaje(s) atcualizado(s)" : "I.Lectura: No hay mensajes que actualizar";
         console.log(msj)
-
         console.log("res final::",resultado_final)
         resolve(msj);
       })
