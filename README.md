@@ -66,11 +66,14 @@ Modificar index.js
  *Borrar los console.log  que son de debug
  *Borrar todos los app.get menos => app.get('facebook' y app.post('facebook')
          
-##Modificar conf.js
+Modificar conf.js
+------------------
  vim modulos/conf.js  
  *Cambiar las claves de desarrollo por las de producción
 
-##Modificar db.js
+
+Modificar db.js
+---------------
  vim modulos/db.js
  *Borrar todos los console.log
 

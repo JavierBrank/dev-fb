@@ -33,12 +33,8 @@ app.post('/facebook', function(req, res) {
   received_updates.unshift(req.body);
   /*
   if (!req.isXHubValid()) {
-    errorxhub = "Advertencia: el encabezado de solicitud X-Hub-Signature no está presente o no es válido";
-    logs.unshift(errorxhub);
-    //res.sendStatus(401);
-    //return;
-  }else{
-    logs.unshift("Encabezado de solicitud X-Hub-Signature validado");
+    res.sendStatus(401);
+    return;
   }
   */
   db.conectarDB()
