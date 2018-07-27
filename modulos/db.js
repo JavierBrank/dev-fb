@@ -307,7 +307,8 @@ module.exports.informeLectura = async function(json, client){
 module.exports.guardarLog = function(json, client, accion, data){
   return new Promise((resolve, reject)=>{
     var sql_log;
-    var estado = data.hasOwnProperty('estado') ?  data.estado : 0;
+    var estado = data.hasOwnProperty('estado') ?  data.estado : 0
+    console.log("#####################################")
     var detalle = data.hasOwnProperty('detalle') ?  data.detalle : 'none';
 
     if(accion){
@@ -316,8 +317,9 @@ module.exports.guardarLog = function(json, client, accion, data){
         sql_log = sqlstring.format("INSERT INTO "+config.tbface.log+"(json_data, estado, detalle) VALUES(?, ?, ?); SELECT currval('tbface_log_id_log_seq');",[JSON.stringify(json),'0', detalle]);
       break;
       case 'update':
-        var id_log = data.hasOwnProperty('id_log') ?  data.id_log : reject("Falta id_log para realizar UPDATE");
+        var id_log = data.hasOwnProperty('id') ?  data.id : reject("Falta id_log para realizar UPDATE");
       sql_log = sqlstring.format("UPDATE "+config.tbface.log+" SET estado= ?, detalle = ? WHERE id_log= ?;",[estado,detalle,id_log]);
+      console.log("SQL UPDATE LOG >>", sql_log);
       break;
       default:
         return reject("La accion no es valida")

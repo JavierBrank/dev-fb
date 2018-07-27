@@ -55,16 +55,30 @@ app.post('/facebook', function(req, res) {
           return json_final;
     })
     .then(bd_desconctada => {
-      console.log("--PASO 8--TODO SALIÓ OK");
+      console.log("--PASO 8--TODO OK");
       console.log("--------finally");
-      db.desconectarDB(con.key); 
+      bd_desconctada.estado=1;
+      db.guardarLog(null, con.key,'update',bd_desconctada)
+      .then(fin=>{
+        db.desconectarDB(con.key).then(oo=>{console.log("BD DESCONECTADA")}); 
+      })
+      .catch(final=>{
+        db.desconectarDB(con.key).then(oo=>{console.log("Error Con update log->BD DESCONECTADA",oo)});
+      })
       res.sendStatus(200);
     })
     .catch((error)=>{
       console.log("--PASO 8- ALGO SALIÓ MAL-");
-      console.error(error);
-      console.log("--------finally");
-      db.desconectarDB(con.key); 
+      console.log(error)
+      error.detalle=JSON.stringify(error.error.message);
+      error.estado=2;
+      db.guardarLog(null, con.key,'update',error)
+      .then(fin=>{
+        db.desconectarDB(con.key).then(oo=>{console.log("BD DESCONECTADA")}); 
+      })
+      .catch(final=>{
+        db.desconectarDB(con.key).then(oo=>{console.log("Error Con update log->BD DESCONECTADA",final)});
+      })
       res.sendStatus(401);
     });
 });

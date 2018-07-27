@@ -8,8 +8,12 @@ module.exports.indentificarJSON = function(json,client){
 		console.log("-----------PASO 1----IDENTIFICANDO JSON")
 		var json_final={};
 		var json_page = {};
-		var data_log = {detalle : 'Init',
-										estado: 0};
+		var data_log = {
+			id : 0,
+			detalle : 'Init',
+			estado: 0,
+			error : ''
+		};
 		var persona = {};
 		var adjuntos = false;
 
@@ -60,12 +64,14 @@ module.exports.indentificarJSON = function(json,client){
 																					? "No hay mensajes para actualizar"
 																					: count_mids+" Mensaje(s) Actualizado(s)"
 							                        		console.log(mensaje)
-							                        		resolve(result);
+							                        		data_log.detalle=JSON.stringify(result)
+							                        		resolve(data_log);
 							                        	}
 												})
 												.catch(mids_error=>{
 													console.log("Error middds")
-													reject(mids_error)
+													data_log.error=mids_error;
+													reject(data_log)
 												})
 														
 											})
@@ -81,11 +87,13 @@ module.exports.indentificarJSON = function(json,client){
 												db.informeEntrega(json_final,client)
 												.then(mids_ok=>{
 													console.log(mids_ok)
-							                        		resolve(mids_ok);
+													data_log.detalle=JSON.stringify(mids_ok)
+							                        		resolve(data_log);
 												})
 												.catch(mids_error=>{
 													console.log("Error middds",mids_error)
-													Reject(mids_error)
+													data_log.error=mids_error
+													Reject(data_log)
 												})
 														
 										}
@@ -93,7 +101,7 @@ module.exports.indentificarJSON = function(json,client){
 									/***********************MENSAJE ENTRANTE O SALIENTE**********************/
 									case messaging.hasOwnProperty('message'):
 										db.guardarLog(json, client,'insert',data_log)
-										.then(log_ok =>{data_log.id_log = log_ok;console.log("Log insertado", log_ok)})
+										.then(log_ok =>{data_log.id = log_ok;console.log("Log insertado", log_ok)})
 									 	.catch(log_nook=>{console.log("Log no insertado", log_nook)})
 										json_final.mid = messaging.message.mid;
 										if(messaging.message.hasOwnProperty('text')){
@@ -138,7 +146,8 @@ module.exports.indentificarJSON = function(json,client){
 													})
 													.catch(error => {
 														console.log('error insertando user', error);
-														rej(error);
+														data_log.error= error
+														rej(data_log);
 													})
 												}
 											})
@@ -271,10 +280,12 @@ module.exports.indentificarJSON = function(json,client){
 					          	}else{
 					          		console.log("Proceso terminado")
 					          	}
-					          	resolve(attach)
+					          	data_log.detalle=JSON.stringify(attach)
+					          	resolve(data_log)
 							    	})
 					        	.catch(error => {
-			            		reject(error)
+					        		data_log.error=error;
+			            		reject(data_log)
 		            		});							
 								/***********************INFORME DE LECTURA**********************/
 									break;
@@ -286,7 +297,8 @@ module.exports.indentificarJSON = function(json,client){
 										db.informeLectura(json_final,client)
 										.then(msj=>{
 											console.log(msj)
-											resolve(msj)
+											data_log.detalle= JSON.stringify(msj)
+											resolve(data_log)
 										}) 
 										.catch(err=>{
 											console.log(err)
@@ -295,7 +307,8 @@ module.exports.indentificarJSON = function(json,client){
 									break;
 									default:
 										console.log("entro en default")
-										resolve('No se reconoce el tipo de messaging - ')
+										data_log.error=new Error("No se reconoce el tipo de messaging - ");
+										reject(data_log);
 								}
 								
 								
@@ -304,13 +317,14 @@ module.exports.indentificarJSON = function(json,client){
 						});//##FIN FOREACH MESSAGING --
 					
 						}else{
-							reject("No existe la propiedad messaging")
+							data_log.error=new Error("No existe la propiedad messaging");
+							reject(data_log)
 						} //Fin if(entry.hasOwnProperty('messaging'))
 					});//fin foreach entry
 					}else{
 						//CAE AQUI SI LA PAGINA NO EXISTE EN LA BD
-						
-						reject("PAGE Inhabilitada o inexistente");
+						data_log.error=new Error("PAGE Inhabilitada o inexistente");
+						reject(data_log);
 					}
 
 					
@@ -318,22 +332,22 @@ module.exports.indentificarJSON = function(json,client){
 				.catch(page_error => {
 					console.log(page_error		)
 					//CAE AQUI SI LA PAGINA NO EXISTE EN LA BD
-				
-					reject("PAGE CONSULTAR EXISTENCIA ERROR");
+					data_log.error=new Error("PAGE CONSULTAR EXISTENCIA ERROR");
+					reject(data_log);
 
 				})
 			
 			}else{
 				//si no existe la propiedad entry
-				
-				reject("NO es un mensaje");
+				data_log.error=new Error("NO es un mensaje");
+				reject(data_log);
 
 			}////Cierre if(entry exist)##FIN SI ENTRY --
 		}else
 		{	
 				console.log("-----------PASO 1----ERROR IDENTIFICANDO JSON")
-				
-					reject({"NO es":" un mensaje"});
+				data_log.error=new Error("NO es un mensaje");
+				reject(data_log);
 
 		} //Cierre if(object=='page')
 			
