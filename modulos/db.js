@@ -63,13 +63,13 @@ module.exports.insertarAdjuntos = function(array_adjuntos, client, id_interaccio
 module.exports.consultarPage = function(json_id_page, client){
   return new Promise((resolve, reject)=>{
     if(json_id_page){
-      var sqlsqtring_consultar_page =  "SELECT id_page id, token_page token, habilitados enabled FROM "+config.tbface.page+" WHERE id_page=?"
+      var sqlsqtring_consultar_page =  "SELECT id_page id, token_page token, habilitado enabled FROM "+config.tbface.page+" WHERE id_page=?"
       sql_consultar_page=sqlstring.format(sqlsqtring_consultar_page, [json_id_page]);
       console.log(sql_consultar_page);
       client.query(sql_consultar_page)
       .then(page_exist => {
         if(page_exist.rows[0]){
-        console.log("Page exist. ",page_exist.rows[0].id_page);
+        console.log("Page exist. ",page_exist.rows[0].id);
         resolve(page_exist.rows[0])
         }else{
           //console.log(page_exist);
@@ -484,7 +484,7 @@ module.exports.altaMailPersona = function(p,client){
       })
       .catch(error=>{
         //Si cualquiera de las querys salio mal cae aca
-        console.error("Error en la funcion altaMailPersona()", error.mensaje)
+        console.error("Error en la funcion altaMailPersona()", error)
         reject(error)
       })
     }else{

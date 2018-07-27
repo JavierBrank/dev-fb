@@ -60,7 +60,7 @@ app.post('/facebook', function(req, res) {
     })
     .catch((error)=>{
       console.log("--PASO 8- ALGO SALIÓ MAL-");
-      console.error(error.message);
+      console.error(error);
       res.sendStatus(200);
     });
 });

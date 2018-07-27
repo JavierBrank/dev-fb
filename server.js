@@ -49,14 +49,18 @@ module.exports.indentificarJSON = function(json,client){
 										json_final.watermark = messaging.delivery.hasOwnProperty('watermark') ? messaging.delivery.watermark : 0;
 										if(messaging.delivery.hasOwnProperty('mids')){
 											var count_mids=messaging.delivery.mids.length;
+											console.log("Count mids: ",count_mids)
 											messaging.delivery.mids.forEach((midn, indexmidn, arraymids)=>{
 												//utilizo midn ya que es el elemento actual del array mids[indexmidn]
 												json_final.mid=midn
 												db.informeEntrega(json_final,client)
-												.then(mids_ok=>{
+												.then(result=>{
 													if(indexmidn==(count_mids-1)){
-							                        		console.log("FIN: "+count_mids+" Mensaje(s) Actualizado(s)")
-							                        		resolve(mids_ok);
+														var mensaje = (result.rowCount==0) 
+																					? "No hay mensajes para actualizar"
+																					: count_mids+" Mensaje(s) Actualizado(s)"
+							                        		console.log(mensaje)
+							                        		resolve(result);
 							                        	}
 												})
 												.catch(mids_error=>{
@@ -299,12 +303,14 @@ module.exports.indentificarJSON = function(json,client){
 
 						});//##FIN FOREACH MESSAGING --
 					
+						}else{
+							reject("No existe la propiedad messaging")
 						} //Fin if(entry.hasOwnProperty('messaging'))
 					});//fin foreach entry
 					}else{
 						//CAE AQUI SI LA PAGINA NO EXISTE EN LA BD
 						
-						reject({"PAGE":"Inhabilitada o inexistente"},'abortar');
+						reject("PAGE Inhabilitada o inexistente");
 					}
 
 					
@@ -313,21 +319,21 @@ module.exports.indentificarJSON = function(json,client){
 					console.log(page_error		)
 					//CAE AQUI SI LA PAGINA NO EXISTE EN LA BD
 				
-					reject({"PAGE":" CONSULTAR EXISTENCIA ERROR"},'abortar');
+					reject("PAGE CONSULTAR EXISTENCIA ERROR");
 
 				})
 			
 			}else{
 				//si no existe la propiedad entry
 				
-				reject({"NO es":" un mensaje"},'abortar');
+				reject("NO es un mensaje");
 
 			}////Cierre if(entry exist)##FIN SI ENTRY --
 		}else
 		{	
 				console.log("-----------PASO 1----ERROR IDENTIFICANDO JSON")
 				
-					reject({"NO es":" un mensaje"},'abortar');
+					reject({"NO es":" un mensaje"});
 
 		} //Cierre if(object=='page')
 			
