@@ -6,12 +6,17 @@ var app            = express();
 var xhub           = require('express-x-hub');
 var db             = require('./modulos/db');
 var server         = require('./server');
+var received_updates = [];
 var client;
 app.listen(config.port, () => {
   console.log("App escuchando en puerto",config.port);
 });
 app.use(xhub({ algorithm: 'sha1', secret: config.app_secret}));
 app.use(bodyParser.json());
+
+app.get('/', function(req, res) {
+  res.send('<pre>JSON.stringify:' + JSON.stringify(received_updates, null, 2) + '</pre>');
+});
 
 app.get('/facebook', function(req, res) {
   if (
@@ -25,6 +30,7 @@ app.get('/facebook', function(req, res) {
 
 });
 app.post('/facebook', function(req, res) { 
+  received_updates.unshift(req.body);
   /*
   if (!req.isXHubValid()) {
     errorxhub = "Advertencia: el encabezado de solicitud X-Hub-Signature no está presente o no es válido";
