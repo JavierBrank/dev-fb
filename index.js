@@ -10,6 +10,7 @@ var received_updates = [];
 var client;
 app.listen(config.port, () => {
   console.log("App escuchando en puerto",config.port);
+  console.log("Url http://localhost:"+config.port+"/");
 });
 app.use(xhub({ algorithm: 'sha1', secret: config.app_secret}));
 app.use(bodyParser.json());
