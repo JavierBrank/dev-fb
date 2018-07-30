@@ -9,7 +9,7 @@ var server         = require('./server');
 var received_updates = [];
 var client;
 app.listen(config.port, () => {
-  console.log("App escuchando en puerto",config.port);
+  console.log("App escuchando http://127.0.0.1:"+config.port+"/");
 });
 app.use(xhub({ algorithm: 'sha1', secret: config.app_secret}));
 app.use(bodyParser.json());
@@ -40,7 +40,7 @@ app.post('/facebook', function(req, res) {
   //var key = ["client"+Math.floor((Math.random() * 1000) + 1)];
   //var con ={};
   
-  console.log(con.nombre_conexion)
+  //console.log(con.nombre_conexion)
   db.conectarDB()
     .then(conexion => { 
     //  con  = { key : conexion};
