@@ -7,6 +7,8 @@ var xhub           = require('express-x-hub');
 var db             = require('./modulos/db');
 var server         = require('./server');
 var received_updates = [];
+var data_log = {};
+var post_json;  
 var client;
 app.listen(config.port, () => {
   console.log("App escuchando http://127.0.0.1:"+config.port+"/");
@@ -37,51 +39,56 @@ app.post('/facebook', function(req, res) {
     return;
   }
   */
+  
   //var key = ["client"+Math.floor((Math.random() * 1000) + 1)];
   //var con ={};
   
   //console.log(con.nombre_conexion)
   db.conectarDB()
     .then(conexion => { 
-    //  con  = { key : conexion};
+      //con  = { key : conexion};
       client = conexion;
       return req.body;
-
     })
-    .then(json => {
-      return server.indentificarJSON(json,client);
+    .then(json=>{
+      post_json= json;
+      return server.validarJson(post_json, client);
     })
-    .then(json_final=>{
-          console.log("--------------paso 7");
-          console.log("Final: ",json_final);
-          return json_final;
+    .then(page_habilitada=>{
+      return db.insertarLog(post_json, client, data_log);         
     })
-    .then(bd_desconctada => {
-      console.log("--PASO 8--TODO OK");
-      console.log("--------finally");
-      bd_desconctada.estado=1;
-      db.guardarLog(null, client,'update',bd_desconctada)
+    .then(id_log=>{
+      res.sendStatus(200);
+      data_log.id=id_log;
+      return server.insertarJson(post_json,client);
+    })
+    .then(result => {
+      console.log("Then utimo")
+      data_log.detalle=result;
+      data_log.estado=1;
+      db.actualizarLog(data_log, client)
       .then(fin=>{
         db.desconectarDB(client).then(oo=>{console.log("BD DESCONECTADA")}); 
       })
       .catch(final=>{
         db.desconectarDB(client).then(oo=>{console.log("Error Con update log->BD DESCONECTADA",oo)});
       })
-      res.sendStatus(200);
     })
-    .catch((error)=>{
-      console.log("--PASO 8- ALGO SALIÓ MAL-");
-      console.log(error)
-      error.detalle=JSON.stringify(error.error.message);
-      error.estado=2;
-      db.guardarLog(null, client,'update',error)
-      .then(fin=>{
-        db.desconectarDB(client).then(oo=>{console.log("BD DESCONECTADA")}); 
-      })
-      .catch(final=>{
-        db.desconectarDB(client).then(oo=>{console.log("Error Con update log->BD DESCONECTADA",final)});
-      })
-      res.sendStatus(401);
+    .catch((e)=>{
+      data_log.detalle=JSON.stringify(e.message)+" ->> "+JSON.stringify(e);
+      data_log.estado=2;
+      if(!data_log.hasOwnProperty('id')){
+        res.sendStatus(400);
+      }else{
+        db.actualizarLog(data_log, client)  
+        .then(fin=>{
+          db.desconectarDB(client).then(oo=>{console.log("BD DESCONECTADA")}); 
+        })
+        .catch(final=>{
+          db.desconectarDB(client).then(oo=>{console.log("Error Con update log->BD DESCONECTADA",oo)});
+        })
+      }     
+      
     });
 });
 

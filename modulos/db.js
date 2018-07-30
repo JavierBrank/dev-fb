@@ -55,7 +55,7 @@ module.exports.insertarAdjuntos = function(array_adjuntos, client, id_interaccio
     }else{
       erroratach = "JOSN insertarATTACHMENTS vacio";
       console.log(erroratch)
-      reject(erroratch)
+      reject(new Error(erroratch));
     }
   })
 }
@@ -112,8 +112,9 @@ module.exports.consultarUsuario = function(psid, client){
         reject(error);
       })
     }else{
-        console.log("Falta PSID:"+psid+" para consltar usuario")
-        reject(false)
+        var error_consultarUsuario ="Error en consultarUsuario(): Falta PSID";
+        console.log(error_consultarUsuario);
+        reject(new Error(error_consultarUsuario));
     }
 
   });
@@ -137,8 +138,8 @@ module.exports.insertarUsuario= function(json, client){
         console.log("Reject client.query(sql_consultar_usuario)")
         reject(error);
       })
-      }else{
-        reject("JSON Vacio");
+    }else{
+        reject(new Error("Error en insertarUsuario(): JSON VACIO"));
     }
   });
 }
@@ -166,7 +167,9 @@ module.exports.insertarMensaje = function(dato, client){
       client.query(sql_insertar_mensaje)
         .then((id_interaccion) => {
           console.log({ "id_interaccion del msj " : id_interaccion[1].rows[0].currval})
-          resolve(id_interaccion[1].rows[0].currval);
+          var saliente = (dato.saliente=='true') ? "saliente" : "entrante";
+          var msj = "Mensaje"+saliente+" insertado en la BD ";
+          resolve({id: id_interaccion[1].rows[0].currval, msj : mensaje});
         })
         .catch((error) => {
           console.log("Reject insertarMensaje")
@@ -236,7 +239,7 @@ module.exports.informeEntrega = function(json, client){
           //si rc es distinto a 0 y a null entonces muestro el mensaje con la cantidad sino muestro el segundo mensaje
           var mensaje = (rc !=0 && rc != null) ? rc+" Mensaje(s)-Actualizado(s)" : "No hay mensajes que actualizar"
           console.log(mensaje)
-          resolve()
+          resolve(mensaje)
           
         })
         .catch(error => {
@@ -245,7 +248,7 @@ module.exports.informeEntrega = function(json, client){
         })
       }else
       {
-        reject("Faltan datos para actualizar msj de entrega");
+        reject(new Error("Error en informeEntrega(): Faltan datos"));
       }
     })        
 
@@ -265,7 +268,7 @@ module.exports.informeLectura = async function(json, client){
           if(id_usuario.rows[0]){
             res(id_usuario.rows[0].id)
           }else{
-            rej("Usuario no existe en BD")
+            rej(new Error('Error en infromeLectura(): Usuario no existe en BD'));
           }
         })
         
@@ -291,52 +294,48 @@ module.exports.informeLectura = async function(json, client){
       })
   }else
   {
-    reject("Falta watermark")
+    reject(new Error("Error en informeLectura(): Falta propiedad watermark en el objeto"));
   }
     
   });
   }
 
+module.exports.insertarLog = function(json, client){
+  return new Promise((resolve, reject)=>{
+
+    var detalle = json.hasOwnProperty('detalle') ?  json.detalle : 'init';
+    var  sql_log = sqlstring.format("INSERT INTO "+config.tbface.log+"(json_data, estado, detalle) VALUES(?, ?, ?);"+
+      " SELECT currval('tbface_log_id_log_seq');",[JSON.stringify(json),'0', detalle]);
+    client.query(sql_log)
+    .then(id_log=>{
+        resolve(id_log[1].rows[0].currval);
+    })
+    .catch(error=>{
+      reject(error);
+    })
+  });
+};
+
 //json: json ---
 //detalle: U comentario de lo que sucedio
 //client:  valor de conexion para la query
 // accion: si se debe insertar o actualizar
-module.exports.guardarLog = function(json, client, accion, data){
+
+module.exports.actualizarLog = function(data, client){
   return new Promise((resolve, reject)=>{
     var sql_log;
-    var estado = data.hasOwnProperty('estado') ?  data.estado : 0
-    console.log("#####################################")
+    var estado = data.hasOwnProperty('estado') ?  data.estado : 0;
     var detalle = data.hasOwnProperty('detalle') ?  data.detalle : 'none';
-
-    if(accion){
-      switch(accion){
-      case 'insert':
-        sql_log = sqlstring.format("INSERT INTO "+config.tbface.log+"(json_data, estado, detalle) VALUES(?, ?, ?); SELECT currval('tbface_log_id_log_seq');",[JSON.stringify(json),'0', detalle]);
-      break;
-      case 'update':
-        var id_log = data.hasOwnProperty('id') ?  data.id : reject("Falta id_log para realizar UPDATE");
-      sql_log = sqlstring.format("UPDATE "+config.tbface.log+" SET estado= ?, detalle = ? WHERE id_log= ?;",[estado,detalle,id_log]);
-      console.log("SQL UPDATE LOG >>", sql_log);
-      break;
-      default:
-        return reject("La accion no es valida")
-      }
-    }else{
-      
-        return reject("Debe especificarse una accion")
-    }
+    var id_log = data.hasOwnProperty('id') ?  data.id : reject(new Error("Error en guardarLog(): Falta id_log para realizar UPDATE"));
+    sql_log = sqlstring.format("UPDATE "+config.tbface.log+" SET estado= ?, detalle = ? WHERE id_log= ?;",[estado,detalle,id_log]);
+    console.log("SQL UPDATE LOG >>", sql_log);
     client.query(sql_log)
     .then(id_log=>{
-      if(accion == 'insert'){
-        resolve(id_log[1].rows[0].currval)
-      }else{
-        resolve(id_log)
-      }
+      resolve(id_log);
     })
     .catch(error=>{
-      reject(error)
-    })
-    
+      reject(error);
+    });
   });
 };
 
@@ -487,7 +486,7 @@ module.exports.altaMailPersona = function(p,client){
         reject(error)
       })
     }else{
-      reject("Falta el objeto persona para insertar mail")
+      reject(new Error("Falta el objeto persona para insertar mail"));
     }
   })
 }
