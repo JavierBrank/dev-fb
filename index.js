@@ -38,17 +38,19 @@ app.post('/facebook', function(req, res) {
     return;
   }
   */
-  var key = ["client"+Math.floor((Math.random() * 1000) + 1)];
-  var con ={};
+  //var key = ["client"+Math.floor((Math.random() * 1000) + 1)];
+  //var con ={};
   
   console.log(con.nombre_conexion)
   db.conectarDB()
     .then(conexion => { 
-      con  = { key : conexion};
+    //  con  = { key : conexion};
+      client = conexion;
       return req.body;
+
     })
     .then(json => {
-      return server.indentificarJSON(json, con.key);
+      return server.indentificarJSON(json,client);
     })
     .then(json_final=>{
           console.log("--------------paso 7");
@@ -59,12 +61,12 @@ app.post('/facebook', function(req, res) {
       console.log("--PASO 8--TODO OK");
       console.log("--------finally");
       bd_desconctada.estado=1;
-      db.guardarLog(null, con.key,'update',bd_desconctada)
+      db.guardarLog(null, client,'update',bd_desconctada)
       .then(fin=>{
-        db.desconectarDB(con.key).then(oo=>{console.log("BD DESCONECTADA")}); 
+        db.desconectarDB(client).then(oo=>{console.log("BD DESCONECTADA")}); 
       })
       .catch(final=>{
-        db.desconectarDB(con.key).then(oo=>{console.log("Error Con update log->BD DESCONECTADA",oo)});
+        db.desconectarDB(client).then(oo=>{console.log("Error Con update log->BD DESCONECTADA",oo)});
       })
       res.sendStatus(200);
     })
@@ -73,12 +75,12 @@ app.post('/facebook', function(req, res) {
       console.log(error)
       error.detalle=JSON.stringify(error.error.message);
       error.estado=2;
-      db.guardarLog(null, con.key,'update',error)
+      db.guardarLog(null, client,'update',error)
       .then(fin=>{
-        db.desconectarDB(con.key).then(oo=>{console.log("BD DESCONECTADA")}); 
+        db.desconectarDB(client).then(oo=>{console.log("BD DESCONECTADA")}); 
       })
       .catch(final=>{
-        db.desconectarDB(con.key).then(oo=>{console.log("Error Con update log->BD DESCONECTADA",final)});
+        db.desconectarDB(client).then(oo=>{console.log("Error Con update log->BD DESCONECTADA",final)});
       })
       res.sendStatus(401);
     });
