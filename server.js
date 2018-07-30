@@ -17,8 +17,7 @@ module.exports.indentificarJSON = function(json,client){
 		var persona = {};
 		var adjuntos = false;
 
-		if (json.hasOwnProperty('object') && json.object == 'page')
-		{
+		if (json.hasOwnProperty('object') && json.object == 'page'){
 			//si es un objeto de pagina
 			//Si existe la propiedad entry
 			if (json.hasOwnProperty('entry'))//##INICIO SI ENTRY --
@@ -342,10 +341,9 @@ module.exports.indentificarJSON = function(json,client){
 				reject(data_log);
 
 			}////Cierre if(entry exist)##FIN SI ENTRY --
-		}else
-		{	
+		}else{	
 				console.log("-----------PASO 1----ERROR IDENTIFICANDO JSON")
-				data_log.error=new Error("NO es un mensaje");
+				data_log.error=new Error("NO es un mensaje 1");
 				reject(data_log);
 
 		} //Cierre if(object=='page')

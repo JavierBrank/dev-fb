@@ -41,7 +41,7 @@ app.post('/facebook', function(req, res) {
   //var key = ["client"+Math.floor((Math.random() * 1000) + 1)];
   //var con ={};
   
-  console.log(con.nombre_conexion)
+  //console.log(con.nombre_conexion)
   db.conectarDB()
     .then(conexion => { 
     //  con  = { key : conexion};
