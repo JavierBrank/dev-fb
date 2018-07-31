@@ -189,11 +189,9 @@ module.exports.informeEntrega = function(json, client){
         //entonces construyo - ejecuto la query y ya termino la funcion devolviendo un valor de Ok o Error 
         client.query(sql_informe_entrega)
         .then((act=>{
-          console.log("UPDATE MENSAJE DELIVERY")
           resolve(act)
         }))
         .catch(error => {
-          console.log("ERROR: UPDATE MENSAJE DELIVERY")
           reject(error)
         })
         
@@ -278,7 +276,7 @@ module.exports.informeLectura = async function(json, client){
         +" SET fecha_leido=?, fecha_actualizacion = now() WHERE id_usuario=? AND saliente = true AND fecha <= ? and fecha_leido=1"
         ,[json.watermark,user_id,json.watermark_converter]);
         console.log("ACTUALIZANDO REGISTROS ")
-          console.log("Sql: ",sql_actualizar_msj)
+        console.log("Sql: ",sql_actualizar_msj)
         return client.query(sql_actualizar_msj)
 
       })

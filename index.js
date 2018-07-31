@@ -79,6 +79,7 @@ app.post('/facebook', function(req, res) {
       data_log.estado=2;
       if(!data_log.hasOwnProperty('id')){
         res.sendStatus(400);
+        if(client)  db.desconectarDB(client)
       }else{
         db.actualizarLog(data_log, client)  
         .then(fin=>{
@@ -88,7 +89,6 @@ app.post('/facebook', function(req, res) {
           db.desconectarDB(client).then(oo=>{console.log("Error Con update log->BD DESCONECTADA",oo)});
         })
       }     
-      
     });
 });
 

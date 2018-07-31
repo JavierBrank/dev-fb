@@ -46,7 +46,7 @@ module.exports.insertarJson = function(json,client){
 		{//##INICIO SI MESSAGING -- Si el objeto tiene la propiedad messaging 
 			//recorro el array messaging[index] como messaging 
 			entry.messaging.forEach(function(messaging, i , array_messaging){
-        json_final.timestamp = messaging.timestamp;
+        	json_final.timestamp = messaging.timestamp;
 				switch(true){
 					/***********************INFORME DE ENTREGA**********************/
 					case messaging.hasOwnProperty('delivery'):
@@ -69,8 +69,8 @@ module.exports.insertarJson = function(json,client){
 								.then(result=>{
 									if(indexmidn==(count_mids-1)){
 										var mensaje = (result.rowCount==0) 
-																	? "No hay mensajes para actualizar"
-																	: count_mids+" Mensaje(s) Actualizado(s)"
+																	? "I.E: No hay mensajes para actualizar"
+																	: "I.E: "+count_mids+" Mensaje(s) Actualizado(s)"
 			                        		resolve(mensaje);
 			                        	}
 								})
@@ -305,7 +305,7 @@ module.exports.insertarJson = function(json,client){
 				
 				
 
-		});//##FIN FOREACH MESSAGING --
+			});//##FIN FOREACH MESSAGING --
 	
 		}else{
 			reject(new Error("Server.js indentificarJSON(): No existe la propiedad messaging"))
