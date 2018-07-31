@@ -1,6 +1,7 @@
 const db = require('./modulos/db');;
 const sqlstring = require('sqlstring');
 const request = require("request");
+const funcion      = require('./modulos/funciones');
 var json_final={};
 var json_page = {};
 var msj_log ;
@@ -12,7 +13,7 @@ module.exports.validarJson = function(json,client){
 			if(json.hasOwnProperty('entry')){
 				json_final.id_page=json.entry[0].id;
 				json_final.time=json.entry[0].time;
-				db.consultarPage(json_final.id_page, client)
+				funcion.consultarPage(json_final.id_page, client)
 				.then(page_ok=>{
 					if(page_ok.enabled){
 						json_page.id 		=	page_ok.id;
@@ -65,7 +66,7 @@ module.exports.insertarJson = function(json,client){
 							messaging.delivery.mids.forEach((midn, indexmidn, arraymids)=>{
 								//utilizo midn ya que es el elemento actual del array mids[indexmidn]
 								json_final.mid=midn
-								db.informeEntrega(json_final,client)
+								funcion.informeEntrega(json_final,client)
 								.then(result=>{
 									if(indexmidn==(count_mids-1)){
 										var mensaje = (result.rowCount==0) 
@@ -88,7 +89,7 @@ module.exports.insertarJson = function(json,client){
 							//En el caso de los "Delivery" el sender siempre va a ser PSID del usuario
 							json_final.psid_webhook_usuario = messaging.sender.id;
 							json_final.midausente = true;
-								db.informeEntrega(json_final,client)
+								funcion.informeEntrega(json_final,client)
 								.then(mids_ok=>{
 									console.log(mids_ok)
 			                        		resolve(JSON.stringify(mids_ok)+" Informe de entrega OK");
@@ -122,7 +123,7 @@ module.exports.insertarJson = function(json,client){
 							json_final.saliente = 'false';
 							console.log("-----PASO 1.1 JSON IDENTIFICADO COMO MENSAJE ENTRANTE PSID",json_final.psid_webhook_usuario)
 						}
-						db.consultarUsuario(json_final.psid_webhook_usuario, client)
+						funcion.consultarUsuario(json_final.psid_webhook_usuario, client)
 						.then(user_exist => {
 							//consultar o insertar user
 							return new Promise((res, rej)=>{
@@ -135,7 +136,7 @@ module.exports.insertarJson = function(json,client){
 								}else{
 									//Si no existe se inserta
 									console.log("Si usuario no existe entonces lo insertamos:")
-									db.insertarUsuario(json_final, client)
+									funcion.insertarUsuario(json_final, client)
 									.then(currval_user => {
 										console.log('Me traigo el currval: ', currval_user);
 										json_final.id_usuario=currval_user.currval;
@@ -171,7 +172,7 @@ module.exports.insertarJson = function(json,client){
 						.then(buscar_correo=>{
 							//Busca mail en el texto si no existe en tb_persona
 							if(buscar_correo){
-								return db.buscarCorreo(json_final.text)
+								return funcion.buscarCorreo(json_final.text)
 								//Si no encontró un correo le dice a la funcion que sigue que no hay nada
 							}else{
 								return false;
@@ -233,7 +234,7 @@ module.exports.insertarJson = function(json,client){
 							//encontro un correo
 							if(alta_cabecera_persona){
 								
-								return db.altaCabeceraPersona(persona, client)
+								return funcion.altaCabeceraPersona(persona, client)
 							}else{
 								//sino le dice a la funcion que sigue que no hay nada para hacer
 								return false
@@ -249,7 +250,7 @@ module.exports.insertarJson = function(json,client){
 								//Retorno la promesa a la funcion que sigue
 								//Esto significa que no se va a insertar el MSJ hasta que no se haya 
 								//Insertado el mail y actualizado el USER
-								return db.altaMailPersona(persona, client)
+								return funcion.altaMailPersona(persona, client)
 							}else{
 								//Sino quiere decir que sigue el camino del false de las funciones anteriores
 								//y continua el proceso normalmente a insertar msj
@@ -259,13 +260,13 @@ module.exports.insertarJson = function(json,client){
 						})
 						.then(insert_msj => {
 							//Insertar MSJ
-							return db.insertarMensaje(json_final,client)
+							return funcion.insertarMensaje(json_final,client)
 						})
 						.then(id_interaccion => {
 							//Insertar agjuntos
 							if(adjuntos){
 								console.log('atachments true');
-			          return db.insertarAdjuntos(messaging.message.attachments, client, id_interaccion.id)
+			          return funcion.insertarAdjuntos(messaging.message.attachments, client, id_interaccion.id)
 		          }else{
 			          return false;
 		          }
@@ -287,7 +288,7 @@ module.exports.insertarJson = function(json,client){
 						//Es un informe de lectura de un mensaje entrante o saliente
 						json_final.watermark = messaging.read.hasOwnProperty('watermark') ? messaging.read.watermark : 1;
 						json_final.psid_webhook_usuario = messaging.sender.id;
-						db.informeLectura(json_final,client)
+						funcion.informeLectura(json_final,client)
 						.then(msj=>{
 							console.log(msj)
 							resolve(msj)
