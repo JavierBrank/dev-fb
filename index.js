@@ -7,6 +7,8 @@ var xhub           = require('express-x-hub');
 const funcion      = require('./modulos/funciones');
 var db             = require('./modulos/db');
 var server         = require('./server');
+
+var addRequestId = require('express-request-id')();
 var received_updates = [];
 
 app.listen(config.port, () => {
@@ -14,6 +16,7 @@ app.listen(config.port, () => {
 });
 app.use(xhub({ algorithm: 'sha1', secret: config.app_secret}));
 app.use(bodyParser.json());
+app.use(addRequestId);
 
 app.get('/', function(req, res) {
   res.send('<pre>JSON.stringify:' + JSON.stringify(received_updates, null, 2) + '</pre>');
@@ -33,13 +36,14 @@ app.get('/facebook', function(req, res) {
 app.post('/facebook', function(req, res) { 
   received_updates.unshift(req.body);
   
+  /*
   if (!req.isXHubValid()) {
     console.log("PETICION NO VALIDA");
     res.sendStatus(401);
     return;
   }
   console.log(req.isXHubValid());
-  
+  */
   
   
   
@@ -55,29 +59,30 @@ app.post('/facebook', function(req, res) {
       return req.body;
     })
     .then(json=>{
-      console.log("###########Validando JSON###########");
+      console.log("###########Validando JSON###########",req.id);
       post_json= json;
       return server.validarJson(post_json, client);
     })
     .then(page_habilitada=>{
-      console.log("########Insertando LOG##########");
+      console.log("########Insertando LOG##########",req.id);
       return funcion.insertarLog(post_json, client, data_log);         
     })
     .then(id_log=>{
-      console.log("########insertar Json##########");
+      console.log("########insertar Json##########",req.id);
       res.sendStatus(200);
       //client.release()
       data_log.id=id_log;
       return server.insertarJson(post_json,client);
     })
     .then(result => {
-      console.log("########result##########");
+      console.log("########result##########",req.id);
       data_log.detalle=result;
       data_log.estado=1;
       return funcion.actualizarLog(data_log, client)  
       
     })
     .catch((e)=>{
+      console.log("########CATCH##########",req.id);
       console.log(e.message);
       data_log.detalle=JSON.stringify(e.message)+" ->> "+JSON.stringify(e);
       data_log.estado=2;
@@ -88,7 +93,7 @@ app.post('/facebook', function(req, res) {
       }     
     })
     .then(finallys=>{
-      console.log("FIN:")
+      console.log("FIN:",req.id)
       if(client) {
         console.log("client.release()")
         client.release();

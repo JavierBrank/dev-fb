@@ -30,7 +30,7 @@ module.exports.obtenerCliente = function(){
 };
 
 
-
+/*
 module.exports.conectarDB = function(){
   return new Promise((resolve, reject) => {
     client = new pg.Client({
@@ -60,3 +60,4 @@ module.exports.desconectarDB = function(client){
     });
   });
 }
+*/
