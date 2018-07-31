@@ -52,9 +52,8 @@ app.post('/facebook', function(req, res) {
   console.log(req.isXHubValid());
   */
   
-  
-  
   //console.log(con.nombre_conexion)
+
   var client ;
   var data_log = {};
   var post_json;  
@@ -72,14 +71,14 @@ app.post('/facebook', function(req, res) {
     })
     .then(page_habilitada=>{
       console.log("########Insertando LOG##########",req.id);
-      return funcion.insertarLog(post_json, client, req.id);         
+      return funcion.insertarLog(post_json, client, req.id, page_habilitada);         
     })
     .then(id_log=>{
       console.log("########insertar Json##########",req.id);
       res.sendStatus(200);
       //client.release()
-      data_log.id=id_log;
-      return server.insertarJson(post_json,client,req.id);
+      data_log.id=id_log.id_log;
+      return server.insertarJson(post_json,client,req.id,id_log.packjson);
     })
     .then(result => {
       console.log("########result##########",req.id);

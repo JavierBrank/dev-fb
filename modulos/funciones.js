@@ -267,7 +267,7 @@ module.exports.informeLectura = async function(json, client){
   });
   }
 
-module.exports.insertarLog = function(json, client,req_id){
+module.exports.insertarLog = function(json, client,req_id,pack_json){
   return new Promise((resolve, reject)=>{
     let json_data = req_id+JSON.stringify(json);
     let detalle = json.hasOwnProperty('detalle') ?  json.detalle : 'init';
@@ -276,7 +276,7 @@ module.exports.insertarLog = function(json, client,req_id){
     console.log("INSERTAR LOG ",sql_log)
     client.query(sql_log)
     .then(id_log=>{
-        resolve(id_log[1].rows[0].currval);
+        resolve({id_log : id_log[1].rows[0].currval, packjson : pack_json});
     })
     .catch(error=>{
       reject(error);

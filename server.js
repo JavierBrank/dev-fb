@@ -2,15 +2,13 @@ const db = require('./modulos/db');;
 const sqlstring = require('sqlstring');
 const request = require("request");
 const funcion      = require('./modulos/funciones');
-var json_final={};
-var json_page = {};
-var msj_log ;
-
 
 module.exports.validarJson = function(json,client){
 	return new Promise((resolve, reject)=>{
 		if(json.hasOwnProperty('object') && json.object == 'page'){
 			if(json.hasOwnProperty('entry')){
+				let json_final={};
+				let json_page = {};
 				json_final.id_page=json.entry[0].id;
 				json_final.time=json.entry[0].time;
 				funcion.consultarPage(json_final.id_page, client)
@@ -18,7 +16,8 @@ module.exports.validarJson = function(json,client){
 					if(page_ok.enabled){
 						json_page.id 		=	page_ok.id;
 						json_page.token =	page_ok.token;
-						resolve(true);
+						let pack_json = {page : json_page, final : json_final}
+						resolve(pack_json);
 					}else{
 						reject(new Error("Error en server.js validarJson(): La pagina no existe o no se encuentra habilitada"));
 					}
@@ -35,10 +34,11 @@ module.exports.validarJson = function(json,client){
 	});
 };
 
-module.exports.insertarJson = function(json,client,req_id){
+module.exports.insertarJson = function(json,client,req_id,json_final, json_page){
 	return new Promise((resolve, reject) => {
-		var persona = {};
-		var adjuntos = false;
+		let msj_log ;
+		let persona = {};
+		let adjuntos = false;
 		//recorro el array Entry[index] como entry 
 		//La funcion forEach() me retorna el primer parametro el elemeno actual del array, indice del elemnto, array
 		json.entry.forEach(function(entry, index, array_entry){
