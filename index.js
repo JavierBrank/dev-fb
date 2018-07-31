@@ -32,15 +32,16 @@ app.get('/facebook', function(req, res) {
 });
 app.post('/facebook', function(req, res) { 
   received_updates.unshift(req.body);
-  /*
+  
   if (!req.isXHubValid()) {
+    console.log("PETICION NO VALIDA");
     res.sendStatus(401);
     return;
   }
-  */
+  console.log(req.isXHubValid());
   
-  //var key = ["client"+Math.floor((Math.random() * 1000) + 1)];
-  //var con ={};
+  
+  
   
   //console.log(con.nombre_conexion)
   var client ;
