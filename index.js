@@ -35,6 +35,7 @@ app.get('/facebook', function(req, res) {
 });
 app.post('/facebook', function(req, res) { 
   received_updates.unshift(req.body);
+  received_updates.unshift(req.id);
   console.log("#####################################");
   console.log("######### NUEVO POST FACEBOOK #######");
   console.log("#####################################");
