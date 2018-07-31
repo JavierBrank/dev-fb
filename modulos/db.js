@@ -169,7 +169,7 @@ module.exports.insertarMensaje = function(dato, client){
           console.log({ "id_interaccion del msj " : id_interaccion[1].rows[0].currval})
           var saliente = (dato.saliente=='true') ? "saliente" : "entrante";
           var msj = "Mensaje"+saliente+" insertado en la BD ";
-          resolve({id: id_interaccion[1].rows[0].currval, msj : mensaje});
+          resolve({id: id_interaccion[1].rows[0].currval, msj : msj});
         })
         .catch((error) => {
           console.log("Reject insertarMensaje")
