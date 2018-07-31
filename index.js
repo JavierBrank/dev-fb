@@ -41,7 +41,7 @@ app.post('/facebook', function(req, res) {
    console.log("#####################################");
   console.log("#"+req.id);
   console.log("#####################################");
-  console.log(req.body)
+  console.log(JSON.stringify(req.body));
   /*
   if (!req.isXHubValid()) {
     console.log("PETICION NO VALIDA");
@@ -71,20 +71,20 @@ app.post('/facebook', function(req, res) {
     })
     .then(page_habilitada=>{
       console.log("########Insertando LOG##########",req.id);
-      return funcion.insertarLog(post_json, client, data_log);         
+      return funcion.insertarLog(post_json, client, req.id);         
     })
     .then(id_log=>{
       console.log("########insertar Json##########",req.id);
       res.sendStatus(200);
       //client.release()
       data_log.id=id_log;
-      return server.insertarJson(post_json,client);
+      return server.insertarJson(post_json,client,req.id);
     })
     .then(result => {
       console.log("########result##########",req.id);
       data_log.detalle=result;
       data_log.estado=1;
-      return funcion.actualizarLog(data_log, client)  
+      return funcion.actualizarLog(data_log, client, req.id)  
       
     })
     .catch((e)=>{
@@ -95,7 +95,7 @@ app.post('/facebook', function(req, res) {
       if(!data_log.hasOwnProperty('id')){
         res.sendStatus(400);
       }else{
-        funcion.actualizarLog(data_log, client);
+        funcion.actualizarLog(data_log, client,req.id);
       }     
     })
     .then(finallys=>{

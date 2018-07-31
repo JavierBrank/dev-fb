@@ -35,7 +35,7 @@ module.exports.validarJson = function(json,client){
 	});
 };
 
-module.exports.insertarJson = function(json,client){
+module.exports.insertarJson = function(json,client,req_id){
 	return new Promise((resolve, reject) => {
 		var persona = {};
 		var adjuntos = false;
@@ -52,7 +52,7 @@ module.exports.insertarJson = function(json,client){
 					/***********************INFORME DE ENTREGA**********************/
 					case messaging.hasOwnProperty('delivery'):
 						//Si existe el atributo delivery quiere decir que es un informe de entrega
-						console.log("-----PASO 1.1 JSON IDENTIFICADO COMO INFORME DE ENTREGA");
+						console.log("INFORME DE ENTREGA ",req_id);
 						/*j.watermark = watermark si existe sino = 0;
 							luego si existe la propiedad 'mids' dentro de delivery(no siempre sucede segun facebook)
 							recorro el array mids en busca de todos los id_mensaje
@@ -115,13 +115,13 @@ module.exports.insertarJson = function(json,client){
 						{	
 							json_final.psid_webhook_usuario = messaging.recipient.id;
 							json_final.saliente = 'true';
-							console.log("------PASO 1.1 JSON IDENTIFICADO COMO MENSAJE SALIENTE PSID",json_final.psid_webhook_usuario)
+							console.log("MENSAJE SALIENTE "+req_id)
 						}else{
 							//es un mensaje saliente 
 							//Si es saliente entoncess el que recibe es el usuario
 							json_final.psid_webhook_usuario = messaging.sender.id;
 							json_final.saliente = 'false';
-							console.log("-----PASO 1.1 JSON IDENTIFICADO COMO MENSAJE ENTRANTE PSID",json_final.psid_webhook_usuario)
+							console.log("MENSAJE ENTRANTE "+req_id)
 						}
 						funcion.consultarUsuario(json_final.psid_webhook_usuario, client)
 						.then(user_exist => {
@@ -284,7 +284,7 @@ module.exports.insertarJson = function(json,client){
 				/***********************INFORME DE LECTURA**********************/
 					break;
 					case messaging.hasOwnProperty('read'):
-						console.log("-----PASO 1.1 JSON IDENTIFICADO COMO INFORME DE LECTURA")
+						console.log("INFORME DE LECTURA "+req_id)
 						//Es un informe de lectura de un mensaje entrante o saliente
 						json_final.watermark = messaging.read.hasOwnProperty('watermark') ? messaging.read.watermark : 1;
 						json_final.psid_webhook_usuario = messaging.sender.id;

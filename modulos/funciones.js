@@ -267,12 +267,12 @@ module.exports.informeLectura = async function(json, client){
   });
   }
 
-module.exports.insertarLog = function(json, client){
+module.exports.insertarLog = function(json, client,req_id){
   return new Promise((resolve, reject)=>{
-
+    let json_data = req_id+JSON.stringify(json);
     let detalle = json.hasOwnProperty('detalle') ?  json.detalle : 'init';
     let  sql_log = sqlstring.format("INSERT INTO "+config.tbface.log+"(json_data, estado, detalle) VALUES(?, ?, ?);"+
-      " SELECT currval('tbface_log_id_log_seq');",[JSON.stringify(json),'0', detalle]);
+      " SELECT currval('tbface_log_id_log_seq');",[,'0', detalle]);
     console.log("INSERTAR LOG ",sql_log)
     client.query(sql_log)
     .then(id_log=>{
@@ -289,11 +289,11 @@ module.exports.insertarLog = function(json, client){
 //client:  valor de conexion para la query
 // accion: si se debe insertar o actualizar
 
-module.exports.actualizarLog = function(data, client){
+module.exports.actualizarLog = function(data, client, req_id){
   return new Promise((resolve, reject)=>{
     let sql_log;
     let estado = data.hasOwnProperty('estado') ?  data.estado : 0;
-    let detalle = data.hasOwnProperty('detalle') ?  data.detalle : 'none';
+    let detalle = data.hasOwnProperty('detalle') ?  req_id+"-"+data.detalle : 'none';
     let id_log = data.hasOwnProperty('id') ?  data.id : reject(new Error("Error en guardarLog(): Falta id_log para realizar UPDATE"));
     sql_log = sqlstring.format("UPDATE "+config.tbface.log+" SET estado= ?, detalle = ? WHERE id_log= ?;",[estado,detalle,id_log]);
     console.log("SQL UPDATE LOG >>", sql_log);
