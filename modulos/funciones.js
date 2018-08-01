@@ -267,16 +267,19 @@ module.exports.informeLectura = async function(json, client){
   });
   }
 
-module.exports.insertarLog = function(json, client,req_id,pack_json){
+module.exports.insertarLog = function(dataJson){
   return new Promise((resolve, reject)=>{
-    let json_data = req_id+JSON.stringify(json);
+    let json = dataJson.postJson;
+    let client = dataJson.client;
+    let json_data = JSON.stringify(json);
     let detalle = json.hasOwnProperty('detalle') ?  json.detalle : 'init';
     let  sql_log = sqlstring.format("INSERT INTO "+config.tbface.log+"(json_data, estado, detalle) VALUES(?, ?, ?);"+
       " SELECT currval('tbface_log_id_log_seq');",[json_data,'0', detalle]);
     console.log("INSERTAR LOG ",sql_log)
     client.query(sql_log)
     .then(id_log=>{
-        resolve({id_log : id_log[1].rows[0].currval, packjson : pack_json});
+      dataJson.dataLog.id = id_log[1].rows[0].currval;
+        resolve(dataJson);
     })
     .catch(error=>{
       reject(error);
@@ -289,20 +292,24 @@ module.exports.insertarLog = function(json, client,req_id,pack_json){
 //client:  valor de conexion para la query
 // accion: si se debe insertar o actualizar
 
-module.exports.actualizarLog = function(data, client, req_id){
+module.exports.actualizarLog = function(dataJson){
   return new Promise((resolve, reject)=>{
+    let data = dataJson.dataLog;
+    let client = dataJson.client;
     let sql_log;
     let estado = data.hasOwnProperty('estado') ?  data.estado : 0;
-    let detalle = data.hasOwnProperty('detalle') ?  req_id+"-"+data.detalle : 'none';
+    let detalle = data.hasOwnProperty('detalle') ? +"-"+data.detalle : 'none';
     let id_log = data.hasOwnProperty('id') ?  data.id : reject(new Error("Error en guardarLog(): Falta id_log para realizar UPDATE"));
     sql_log = sqlstring.format("UPDATE "+config.tbface.log+" SET estado= ?, detalle = ? WHERE id_log= ?;",[estado,detalle,id_log]);
     console.log("SQL UPDATE LOG >>", sql_log);
     client.query(sql_log)
     .then(id_log=>{
-      resolve(id_log);
+      dataJson.dataLog.result = id_log;
+      resolve(dataJson);
     })
-    .catch(error=>{
-      reject(error);
+    .catch(err=>{
+      dataJson.error = err;
+      reject(dataJson); 
     });
   });
 };

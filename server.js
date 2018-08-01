@@ -3,8 +3,10 @@ const sqlstring = require('sqlstring');
 const request = require("request");
 const funcion      = require('./modulos/funciones');
 
-module.exports.validarJson = function(json,client){
+module.exports.validarJson = function(dataJson){
 	return new Promise((resolve, reject)=>{
+		let json = dataJson.postJson;
+		let client = dataJson.client;
 		if(json.hasOwnProperty('object') && json.object == 'page'){
 			if(json.hasOwnProperty('entry')){
 				let json_final={};
@@ -16,29 +18,38 @@ module.exports.validarJson = function(json,client){
 					if(page_ok.enabled){
 						json_page.id 		=	page_ok.id;
 						json_page.token =	page_ok.token;
-						let pack_json = {page : json_page, final : json_final}
-						resolve(pack_json);
+						dataJson.jsonPage = json_page; 
+						dataJson.jsonFinal = json_final;
+						resolve(dataJson);
 					}else{
-						reject(new Error("Error en server.js validarJson(): La pagina no existe o no se encuentra habilitada"));
+						dataJson.error = new Error("Error en server.js validarJson(): La pagina no existe o no se encuentra habilitada"); 
+						reject(dataJson);
 					}
 				})
 				.catch(error=>{
-					reject(error);
+					dataJson.error = error;
+					reject(dataJson);
 				})
 			}else{
-				reject(new Error("Error en server.js validarJson(): No existe la propiedad entry"));
+				dataJson.error = new Error("Error en server.js validarJson(): No existe la propiedad entry"); 
+				reject(dataJson);
 			}
 		}else{
-			reject(new Error("Error en server.js validarJson(): No es un objeto page"));
+			dataJson.error = new Error("Error en server.js validarJson(): No es un objeto page"); 
+			reject(dataJson);
 		}
 	});
 };
 
-module.exports.insertarJson = function(json,client,req_id,json_final, json_page){
+module.exports.insertarJson = function(dataJson){
 	return new Promise((resolve, reject) => {
+		let json = dataJson.postJson;
+		let client = dataJson.client;
 		let msj_log ;
 		let persona = {};
 		let adjuntos = false;
+		let json_final=dataJson.jsonFinal;
+		let json_page = dataJson.jsonPage;
 		//recorro el array Entry[index] como entry 
 		//La funcion forEach() me retorna el primer parametro el elemeno actual del array, indice del elemnto, array
 		json.entry.forEach(function(entry, index, array_entry){
@@ -52,7 +63,7 @@ module.exports.insertarJson = function(json,client,req_id,json_final, json_page)
 					/***********************INFORME DE ENTREGA**********************/
 					case messaging.hasOwnProperty('delivery'):
 						//Si existe el atributo delivery quiere decir que es un informe de entrega
-						console.log("INFORME DE ENTREGA ",req_id);
+						console.log("INFORME DE ENTREGA ");
 						/*j.watermark = watermark si existe sino = 0;
 							luego si existe la propiedad 'mids' dentro de delivery(no siempre sucede segun facebook)
 							recorro el array mids en busca de todos los id_mensaje
@@ -72,11 +83,15 @@ module.exports.insertarJson = function(json,client,req_id,json_final, json_page)
 										var mensaje = (result.rowCount==0) 
 																	? "I.E: No hay mensajes para actualizar"
 																	: "I.E: "+count_mids+" Mensaje(s) Actualizado(s)"
-			                        		resolve(mensaje);
+										dataJson.jsonPage= json_page;
+										dataJson.jsonFinal = json_final;
+										dataJson.mensaje = mensaje;
+										resolve(dataJson);
 			                        	}
 								})
 								.catch(mids_error=>{
-									reject(mids_error)
+									dataJson.error = mids_error;
+									reject(dataJson)
 								})
 										
 							})
@@ -92,10 +107,15 @@ module.exports.insertarJson = function(json,client,req_id,json_final, json_page)
 								funcion.informeEntrega(json_final,client)
 								.then(mids_ok=>{
 									console.log(mids_ok)
-			                        		resolve(JSON.stringify(mids_ok)+" Informe de entrega OK");
+									let mensaje = JSON.stringify(mids_ok)+" Informe de entrega OK";
+									dataJson.jsonPage= json_page;
+									dataJson.jsonFinal = json_final;
+									dataJson.mensaje = mensaje;
+									resolve(dataJson);
 								})
 								.catch(mids_error=>{
-									Reject(mids_error)
+									dataJson.error = mids_error;
+									Reject(dataJson)
 								})
 										
 						}
@@ -115,13 +135,13 @@ module.exports.insertarJson = function(json,client,req_id,json_final, json_page)
 						{	
 							json_final.psid_webhook_usuario = messaging.recipient.id;
 							json_final.saliente = 'true';
-							console.log("MENSAJE SALIENTE "+req_id)
+							console.log("MENSAJE SALIENTE ")
 						}else{
 							//es un mensaje saliente 
 							//Si es saliente entoncess el que recibe es el usuario
 							json_final.psid_webhook_usuario = messaging.sender.id;
 							json_final.saliente = 'false';
-							console.log("MENSAJE ENTRANTE "+req_id)
+							console.log("MENSAJE ENTRANTE ")
 						}
 						funcion.consultarUsuario(json_final.psid_webhook_usuario, client)
 						.then(user_exist => {
@@ -273,34 +293,43 @@ module.exports.insertarJson = function(json,client,req_id,json_final, json_page)
 	          })
 	          .then(attach => {
 	          	//Terminar Proceso
-	          	var saliente = (json_final.saliente=='true') ? "saliente" : "entrante"
-	          	var msj = (attach) ? "Proceso terminado: "+attach+" adjuntos insertados" : "Mensaje "+saliente+" insertado en BD"
-	          	console.log(msj)
-	          	resolve(msj)
+	          	let saliente = (json_final.saliente=='true') ? "saliente" : "entrante"
+	          	let mensaje = (attach) ? "Proceso terminado: "+attach+" adjuntos insertados" : "Mensaje "+saliente+" insertado en BD"
+	          	console.log(mensaje)
+	          	dataJson.jsonPage= json_page;
+				dataJson.jsonFinal = json_final;
+				dataJson.mensaje = mensaje;
+	          	resolve(dataJson)
 			    	})
 	        	.catch(error => {
-          		reject(error)
+	        		dataJson.error = error;
+          			reject(dataJson)
         		});							
 				/***********************INFORME DE LECTURA**********************/
 					break;
 					case messaging.hasOwnProperty('read'):
-						console.log("INFORME DE LECTURA "+req_id)
+						console.log("INFORME DE LECTURA ")
 						//Es un informe de lectura de un mensaje entrante o saliente
 						json_final.watermark = messaging.read.hasOwnProperty('watermark') ? messaging.read.watermark : 1;
 						json_final.psid_webhook_usuario = messaging.sender.id;
 						funcion.informeLectura(json_final,client)
-						.then(msj=>{
+						.then(mensaje=>{
 							console.log(msj)
-							resolve(msj)
+							dataJson.jsonPage= json_page;
+							dataJson.jsonFinal = json_final;
+							dataJson.mensaje = mensaje;
+							resolve(dataJson)
 						}) 
 						.catch(err=>{
-							console.log(err)
-							reject(err)
+							console.log(err);
+							dataJson.error= err;
+							reject(dataJson)
 						})	
 					break;
 					default:
 						console.log("entro en default")
-						reject(new Error("Server.js indentificarJSON(): No se reconoce el tipo de messaging - "));
+						dataJson.error = new Error("Server.js indentificarJSON(): No se reconoce el tipo de messaging - "); 
+						reject(dataJson);
 				}
 				
 				
@@ -309,7 +338,8 @@ module.exports.insertarJson = function(json,client,req_id,json_final, json_page)
 			});//##FIN FOREACH MESSAGING --
 	
 		}else{
-			reject(new Error("Server.js indentificarJSON(): No existe la propiedad messaging"))
+			dataJson.error= new Error("Server.js indentificarJSON(): No existe la propiedad messaging"); 
+			reject(dataJson);
 		} //Fin if(entry.hasOwnProperty('messaging'))
 	});//fin foreach entry
 					

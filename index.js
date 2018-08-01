@@ -7,8 +7,6 @@ var xhub           = require('express-x-hub');
 const funcion      = require('./modulos/funciones');
 var db             = require('./modulos/db');
 var server         = require('./server');
-
-var addRequestId = require('express-request-id')();
 var received_updates = [];
 
 app.listen(config.port, () => {
@@ -17,7 +15,6 @@ app.listen(config.port, () => {
 });
 app.use(xhub({ algorithm: 'sha1', secret: config.app_secret}));
 app.use(bodyParser.json());
-app.use(addRequestId);
 
 app.get('/', function(req, res) {
   res.send('<pre>JSON.stringify:' + JSON.stringify(received_updates, null, 2) + '</pre>');
@@ -36,14 +33,9 @@ app.get('/facebook', function(req, res) {
 });
 app.post('/facebook', function(req, res) { 
   received_updates.unshift(req.body);
-  received_updates.unshift(req.id);
   console.log("#####################################");
   console.log("######### NUEVO POST FACEBOOK #######");
   console.log("#####################################");
-   console.log("#####################################");
-  console.log("#"+req.id);
-  console.log("#####################################");
-  console.log(JSON.stringify(req.body));
   /*
   if (!req.isXHubValid()) {
     console.log("PETICION NO VALIDA");
@@ -54,56 +46,56 @@ app.post('/facebook', function(req, res) {
   */
   
   //console.log(con.nombre_conexion)
-  var client ;
-  var data_log = {};
-  var post_json; 
-  var dataJson = {}; 
   
   db.obtenerCliente()
     .then(conexion => { 
       //con  = { key : conexion};
-      client = conexion;
-      return req.body;
+      let dataJson = {
+                      dataLog : {},
+                      postJson: req.body,
+                      client: conexion,
+                      jsonFinal: {},
+                      jsonPage: {},
+                      error: '',
+                    };
+      return dataJson;
     })
-    .then(json=>{
-      console.log("###########Validando JSON###########",req.id);
-      post_json= json;
-      return server.validarJson(post_json, client);
+    .then(dataJson=>{
+      console.log("###########Validando JSON###########");
+      return server.validarJson(dataJson);
     })
-    .then(page_habilitada=>{
-      console.log("########Insertando LOG##########",req.id);
-      return funcion.insertarLog(post_json, client, req.id, page_habilitada);         
+    .then(dataJson=>{
+      console.log("########Insertando LOG##########");
+      return funcion.insertarLog(dataJson);         
     })
-    .then(id_log=>{
-      console.log("########insertar Json##########",req.id);
+    .then(dataJson=>{
+      console.log("########insertar Json##########");
       res.sendStatus(200);
       //client.release()
-      data_log.id=id_log.id_log;
-      return server.insertarJson(post_json,client,req.id,id_log.packjson);
+      return server.insertarJson(dataJson);
     })
     .then(result => {
-      console.log("########result##########",req.id);
-      data_log.detalle=result;
-      data_log.estado=1;
-      return funcion.actualizarLog(data_log, client, req.id)  
-      
+      console.log("########result##########");
+      result.dataLog.detalle=result.mensaje;
+      result.dataLog.estado=1;
+      return funcion.actualizarLog(result)  
     })
     .catch((e)=>{
-      console.log("########CATCH##########",req.id);
-      console.log(e.message);
-      data_log.detalle=JSON.stringify(e.message)+" ->> "+JSON.stringify(e);
-      data_log.estado=2;
-      if(!data_log.hasOwnProperty('id')){
+      console.log("########CATCH##########");
+      console.log(e.error);
+      e.dataLog.detalle=JSON.stringify(e.error.message)+" ->> "+JSON.stringify(e.error);
+      e.dataLog.estado=2;
+      if(!e.dataLog.hasOwnProperty('id')){
         res.sendStatus(400);
       }else{
-        funcion.actualizarLog(data_log, client,req.id);
+        return funcion.actualizarLog(e.dataLog, e.client, e);
       }     
     })
     .then(finallys=>{
-      console.log("FIN:",req.id)
-      if(client) {
+      console.log("FIN:")
+      if(finallys.client) {
         console.log("client.release()")
-        client.release();
+        finallys.client.release();
       } 
     });
 });
