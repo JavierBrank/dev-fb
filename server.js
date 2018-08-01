@@ -313,11 +313,5 @@ module.exports.insertarJson = function(json,client,req_id,json_final, json_page)
 		} //Fin if(entry.hasOwnProperty('messaging'))
 	});//fin foreach entry
 					
-
-			
 	})//Cierre promesa
-			
-		
 }; //Cierre funcion
-
-
