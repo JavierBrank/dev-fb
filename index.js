@@ -80,9 +80,9 @@ app.post('/facebook', function(req, res) {
       result.dataLog.estado=1;
       return funcion.actualizarLog(result)  
     })
-    .catch((e)=>{
+    .catch(e=>{
       console.log("########CATCH##########");
-      console.log(e.error);
+      console.log(e); 
       e.dataLog.detalle=JSON.stringify(e.error.message)+" ->> "+JSON.stringify(e.error);
       e.dataLog.estado=2;
       if(!e.dataLog.hasOwnProperty('id')){
