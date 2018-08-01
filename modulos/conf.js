@@ -40,14 +40,14 @@ module.exports = {
 
   // cantidad máxima de clientes que el grupo puede contener
   // por defecto esto está configurado a 10.
-  max: process.env.max     || 20,
+  max: process.env.max     || 10,
 
   // número de milisegundos que un cliente debe permanecer inactivo en la agrupación y no ser desprotegido(cheked out)
   // antes de que se desconecte del back-end y se descarte
   // por defecto es 10000 (10 segundos) - configurado en 0 para deshabilitar la desconexión automática de clientes inactivos
-  idleTimeoutMillis: process.env.idleTimeoutMillis             || 30000,
+  idleTimeoutMillis: process.env.idleTimeoutMillis             || 1000,
 
   // número de milisegundos que esperar antes de que se agote el tiempo de espera al conectar un nuevo cliente
   // por defecto esto es 0 lo que significa que no hay tiempo de espera
-  connectionTimeoutMillis: process.env.connectionTimeoutMillis || 2000,
+  connectionTimeoutMillis: process.env.connectionTimeoutMillis || 0,
 };

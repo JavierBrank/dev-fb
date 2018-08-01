@@ -56,7 +56,8 @@ app.post('/facebook', function(req, res) {
   //console.log(con.nombre_conexion)
   var client ;
   var data_log = {};
-  var post_json;  
+  var post_json; 
+  var dataJson = {}; 
   
   db.obtenerCliente()
     .then(conexion => { 
