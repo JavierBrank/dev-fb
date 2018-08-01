@@ -8,16 +8,16 @@ module.exports.obtenerCliente = function(){
   return new Promise((resolve, reject)=>{
     pool.connect()
     .then(client=>{
+      console.log("Conexiones de clientes abiertas: ",pool.totalCount);
+      console.log("Clientes inactivos dentro del grupo: ",pool.idleCount);
+      console.log("Solicitudes en cola esperando un cliente: ",pool.waitingCount);
       resolve(client);
     })
     .catch(error=>{
       console.log(error);
       reject(new Error('No se pudo obtenerCliente()'));
     })
-    console.log("Cliente okkk");
-    console.log("Clientes existentes dentro del grupo: ",pool.totalCount);
-    console.log("Clientes inactivos dentro del grupo: ",pool.idleCount);
-    console.log("Solicitudes en cola esperando en un cliente: ",pool.waitingCount);
+    
   });
 };
 

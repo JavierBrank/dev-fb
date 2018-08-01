@@ -314,7 +314,6 @@ module.exports.insertarJson = function(dataJson){
 						json_final.psid_webhook_usuario = messaging.sender.id;
 						funcion.informeLectura(json_final,client)
 						.then(mensaje=>{
-							console.log(msj)
 							dataJson.jsonPage= json_page;
 							dataJson.jsonFinal = json_final;
 							dataJson.mensaje = mensaje;
