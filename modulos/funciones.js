@@ -296,6 +296,7 @@ module.exports.actualizarLog = function(dataJson){
   return new Promise((resolve, reject)=>{
     let data = dataJson.dataLog;
     let client = dataJson.client;
+    console.log("--------------------------------")
     let sql_log;
     let estado = data.hasOwnProperty('estado') ?  data.estado : 0;
     let detalle = data.hasOwnProperty('detalle') ? +"-"+data.detalle : 'none';

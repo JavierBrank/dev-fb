@@ -88,7 +88,7 @@ app.post('/facebook', function(req, res) {
       if(!e.dataLog.hasOwnProperty('id')){
         res.sendStatus(400);
       }else{
-        return funcion.actualizarLog(e.dataLog, e.client, e);
+        return funcion.actualizarLog(e);
       }     
     })
     .then(finallys=>{

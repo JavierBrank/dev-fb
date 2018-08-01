@@ -1,15 +1,7 @@
 'use strict'
 const { Pool } = require('pg');
 const config                    = require('./conf');
-const pool = new Pool(
-  {
-    connectionString        :   config.conString,
-    host                    :   config.host,
-    user                    :   config.user,
-    max                     :   config.max,
-    idleTimeoutMillis       :   config.idleTimeoutMillis,
-    connectionTimeoutMillis :   config.connectionTimeoutMillis,
-  });
+const pool = new Pool(config.poolConf);
 
 
 module.exports.obtenerCliente = function(){
