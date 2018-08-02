@@ -271,7 +271,7 @@ module.exports.insertarLog = function(dataJson){
   return new Promise((resolve, reject)=>{
     let json = dataJson.postJson;
     let client = dataJson.client;
-    let json_data = sqlstring.format(JSON.stringify(json));
+    let json_data = " HOLA" ;
     let detalle = json.hasOwnProperty('detalle') ?  json.detalle : 'init';
     let  sql_log = sqlstring.format("INSERT INTO "+config.tbface.log+"(json_data, estado, detalle) VALUES(?, ?, ?);"+
       " SELECT currval('tbface_log_id_log_seq');",[json_data,'0', detalle]);
